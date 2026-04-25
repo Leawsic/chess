@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "chess",
+	"version": "${version}",
+	"name": "Chess",
+	"description": "This is a mod that adds several types of chess that can be played",
+	"authors": [
+		"Leawsic"
+	],
+	"contact": {
+		"homepage": "https://blog.leawsic.site/",
+		"sources": "https://github.com/Leawsic/Chess"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/chess/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"site.leawsic.chess.Chess"
+		],
+        "client": [
+            "site.leawsic.chess.ChessClient"
+        ],
+		"fabric-datagen": [
+			"site.leawsic.chess.ChessDataGenerator"
+		]
+	},
+	"mixins": [
+		"chess.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.17.3",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
