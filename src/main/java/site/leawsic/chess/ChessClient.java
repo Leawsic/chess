@@ -16,7 +16,9 @@ public class ChessClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         BlockEntityRendererFactories.register(ModBlocks.GO_BOARD_BLOCK_ENTITY, BaseBoardBlockEntityRenderer::new);
-        HandledScreens.register(ModBlocks.GO_BOARD_SCREEN_HANDLER, BaseBoardScreen::new);
+
+        HandledScreens.register(ModBlocks.GO_BOARD_SCREEN_HANDLER,BaseBoardScreen::new);
+
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.GO_BOARD, RenderLayer.getCutout());
     }
 }

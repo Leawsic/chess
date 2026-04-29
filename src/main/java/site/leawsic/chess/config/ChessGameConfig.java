@@ -21,6 +21,13 @@ public class ChessGameConfig {
     // 落子规则：返回 PlaceResult（是否成功、是否切换玩家、游戏是否结束）
     private final BiFunction<BaseBoardBlockEntity, Move, PlaceResult> placeRule;
 
+    private final int boardTextureWidth;   // 纹理总宽度（像素）
+    private final int boardTextureHeight;  // 纹理总高度
+    private final int boardLeftU;          // 棋盘区域在纹理中的左边界
+    private final int boardTopV;           // 棋盘区域在纹理中的上边界
+    private final int boardCellPixelSize;
+    private final int pieceTextureSize;
+
     private ChessGameConfig(Builder builder) {
         this.rows = builder.rows;
         this.cols = builder.cols;
@@ -34,6 +41,32 @@ public class ChessGameConfig {
         this.translationKey = builder.translationKey;
         this.starPoints = builder.starPoints != null ? List.copyOf(builder.starPoints) : List.of();
         this.placeRule = builder.placeRule;
+        this.boardTextureWidth = builder.boardTextureWidth;
+        this.boardTextureHeight = builder.boardTextureHeight;
+        this.boardLeftU = builder.boardLeftU;
+        this.boardTopV = builder.boardTopV;
+        this.boardCellPixelSize = builder.boardCellPixelSize;
+        this.pieceTextureSize = builder.pieceTextureSize;
+    }
+
+    public int getBoardTextureWidth() {
+        return boardTextureWidth;
+    }
+
+    public int getBoardTextureHeight() {
+        return boardTextureHeight;
+    }
+
+    public int getBoardLeftU() {
+        return boardLeftU;
+    }
+
+    public int getBoardTopV() {
+        return boardTopV;
+    }
+
+    public int getBoardCellPixelSize() {
+        return boardCellPixelSize;
     }
 
     public int getRows() {
@@ -95,6 +128,10 @@ public class ChessGameConfig {
         return placeRule.apply(boardEntity, move);
     }
 
+    public int getPieceTextureSize() {
+        return pieceTextureSize;
+    }
+
     // 棋子类型定义，可扩展（如名称、颜色等），目前仅存储ID和显示名
     public record PieceType(int id, String name) {
         public static final PieceType EMPTY = new PieceType(0, "empty");
@@ -128,6 +165,43 @@ public class ChessGameConfig {
         private String translationKey = "board.generic";
         private List<int[]> starPoints = List.of();
         private BiFunction<BaseBoardBlockEntity, Move, PlaceResult> placeRule;
+
+        private int boardTextureWidth = 256;   // 纹理总宽度（像素）
+        private int boardTextureHeight = 256;  // 纹理总高度
+        private int boardLeftU = 19;          // 棋盘区域在纹理中的左边界
+        private int boardTopV = 19;           // 棋盘区域在纹理中的上边界
+        private int boardCellPixelSize = 12;
+        private int pieceTextureSize = 32;
+
+        public Builder boardTextureWidth(int boardTextureWidth) {
+            this.boardTextureWidth = boardTextureWidth;
+            return this;
+        }
+
+        public Builder boardTextureHeight(int boardTextureHeight) {
+            this.boardTextureHeight = boardTextureHeight;
+            return this;
+        }
+
+        public Builder boardLeftU(int boardLeftU) {
+            this.boardLeftU = boardLeftU;
+            return this;
+        }
+
+        public Builder boardTopV(int boardTopV) {
+            this.boardTopV = boardTopV;
+            return this;
+        }
+
+        public Builder boardCellPixelSize(int boardCellPixelSize) {
+            this.boardCellPixelSize = boardCellPixelSize;
+            return this;
+        }
+
+        public Builder pieceTextureSize(int pieceTextureSize) {
+            this.pieceTextureSize = pieceTextureSize;
+            return this;
+        }
 
         public Builder rows(int rows) {
             this.rows = rows;

@@ -5,8 +5,8 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.network.packet.Packet;
 import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
@@ -16,13 +16,13 @@ import site.leawsic.chess.config.Move;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BaseBoardBlockEntity extends BlockEntity {
+public class BaseBoardBlockEntity extends BlockEntity {
     private final ChessGameConfig config;
+    private final List<Move> moveHistory = new ArrayList<>();
     private int[][] board;
     private int currentPlayer;
     private boolean gameOver;
     private boolean editMode;
-    private final List<Move> moveHistory = new ArrayList<>();
 
     public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig config) {
         super(type, pos, state);
@@ -33,12 +33,29 @@ public abstract class BaseBoardBlockEntity extends BlockEntity {
         this.editMode = false;
     }
 
-    public ChessGameConfig getConfig() { return config; }
-    public int[][] getBoard() { return board; }
-    public int getCurrentPlayer() { return currentPlayer; }
-    public boolean isGameOver() { return gameOver; }
-    public boolean isEditMode() { return editMode; }
-    public List<Move> getMoveHistory() { return moveHistory; }
+    public ChessGameConfig getConfig() {
+        return config;
+    }
+
+    public int[][] getBoard() {
+        return board;
+    }
+
+    public int getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public boolean isEditMode() {
+        return editMode;
+    }
+
+    public List<Move> getMoveHistory() {
+        return moveHistory;
+    }
 
     public boolean placePiece(int x, int y, int player) {
         if (x < 0 || x >= config.getCols() || y < 0 || y >= config.getRows()) return false;

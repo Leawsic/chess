@@ -7,7 +7,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
-import site.leawsic.chess.block.ModBlocks;
 
 public class ModItemGroup {
     public static final ItemGroup CHESS_GROUP = Registry.register(
@@ -18,7 +17,6 @@ public class ModItemGroup {
                     .icon(() -> new ItemStack(ModItems.GO_BOARD))
                     .entries((displayContext, entries) -> {
                         entries.add(ModItems.GO_BOARD);
-                        entries.add(ModBlocks.GO_BOARD);
                     })
                     .build()
     );

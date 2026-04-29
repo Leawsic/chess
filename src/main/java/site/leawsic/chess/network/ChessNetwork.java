@@ -17,9 +17,12 @@ public class ChessNetwork {
             BlockPos pos = buf.readBlockPos();
             int x = buf.readByte();
             int y = buf.readByte();
+            int pieceType = buf.readByte(); // 读取棋子类型
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
-                    boardEntity.placePiece(x, y, boardEntity.getCurrentPlayer());
+                    // 在编辑模式下使用传入的棋子类型，否则使用当前玩家
+                    int finalPieceType = boardEntity.isEditMode() ? pieceType : boardEntity.getCurrentPlayer();
+                    boardEntity.placePiece(x, y, finalPieceType);
                 }
             });
         });

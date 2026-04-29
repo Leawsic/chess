@@ -7,8 +7,8 @@ import java.util.List;
 
 public class GomokuConfig {
     public static final ChessGameConfig CONFIG = new ChessGameConfig.Builder()
-            .rows(15)
-            .cols(15)
+            .rows(19)
+            .cols(19)
             .playerCount(2)
             .initialPlayer(1) // 黑先
             .pieceTypes(
@@ -18,18 +18,24 @@ public class GomokuConfig {
             )
             .pieceTextures(
                     null,  // EMPTY 不使用
-                    Chess.id("textures/block/piece_black.png"),
-                    Chess.id("textures/block/piece_white.png")
+                    Chess.id("block/piece_black"),
+                    Chess.id("block/piece_white")
             )
-            .boardTopTexture(Chess.id("textures/block/go_board_top.png"))
-            .boardBottomTexture(new Identifier("minecraft","textures/block/oak_planks.png"))
-            .boardSideTexture(Chess.id("textures/block/birch_planks.png"))
+            .boardTopTexture(Chess.id("block/go_board_top"))
+            .boardBottomTexture(Chess.id("block/go_board_bottom"))
+            .boardSideTexture(new Identifier("minecraft","block/birch_planks"))
             .translationKey("block.chess.go_board")
             .starPoints(List.of(
                     new int[]{3, 3}, new int[]{3, 7}, new int[]{3, 11},
                     new int[]{7, 3}, new int[]{7, 7}, new int[]{7, 11},
                     new int[]{11, 3}, new int[]{11, 7}, new int[]{11, 11}
             ))
+            .boardTextureWidth(256)
+            .boardTextureHeight(256)
+            .boardLeftU(19)
+            .boardTopV(19)
+            .boardCellPixelSize(12)
+            .pieceTextureSize(12)
             .placeRule((entity, move) -> {
                 // 五子棋胜负判定
                 int[][] board = entity.getBoard();
