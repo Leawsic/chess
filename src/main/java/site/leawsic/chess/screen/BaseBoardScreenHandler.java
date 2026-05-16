@@ -43,4 +43,13 @@ public class BaseBoardScreenHandler extends ScreenHandler {
                 boardPos.getZ() + 0.5
         ) <= 64.0;
     }
+
+    @Override
+    public void onClosed(PlayerEntity player) {
+        super.onClosed(player);
+        if (!player.getWorld().isClient
+                && player.getWorld().getBlockEntity(boardPos) instanceof BaseBoardBlockEntity boardEntity) {
+            boardEntity.clearEditMode(player.getUuid());
+        }
+    }
 }

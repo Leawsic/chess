@@ -117,7 +117,14 @@ public class BaseBoardBlockEntity extends BlockEntity {
      * 客人加入对局
      */
     public void joinGame(UUID playerUuid) {
-        if (hostPlayer != null && guestPlayer == null && !hostPlayer.equals(playerUuid)) {
+        if (isInGame(playerUuid)) return;
+
+        if (hostPlayer == null) {
+            setHost(playerUuid);
+            return;
+        }
+
+        if (guestPlayer == null) {
             this.guestPlayer = playerUuid;
             this.isMultiplayer = true;
             this.editMode = false; // 多人模式下禁止编辑
@@ -146,25 +153,27 @@ public class BaseBoardBlockEntity extends BlockEntity {
      */
     public void leaveGame(UUID playerUuid) {
         if (isHost(playerUuid)) {
-            // 房主退出
             if (guestPlayer != null) {
-                // 还有客人，将客人升级为房主
+                // 保留对局占位，避免观战者用旧同步状态加入到一个不存在的房主名下。
                 this.hostPlayer = this.guestPlayer;
-                this.hostPieceType = this.guestPieceType; // 继承棋子类型
+                this.hostPieceType = this.guestPieceType;
+                this.guestPieceType = nextPlayer(this.hostPieceType);
             } else {
-                // 无客人，完全清空
                 this.hostPlayer = null;
+                this.hostPieceType = 1;
+                this.guestPieceType = 2;
             }
             this.guestPlayer = null;
-            this.isMultiplayer = false; // 恢复单人模式
+            this.isMultiplayer = false;
             this.editMode = false;
-            this.gameOver = false; // 清除游戏结束状态
+            this.gameOver = false;
         } else if (guestPlayer != null && guestPlayer.equals(playerUuid)) {
-            // 客人退出
             this.guestPlayer = null;
-            this.isMultiplayer = false; // 恢复单人模式
+            this.isMultiplayer = false;
             this.editMode = false;
-            this.gameOver = false; // 清除游戏结束状态
+            this.gameOver = false;
+        } else {
+            return;
         }
         markDirtyAndSync();
     }
@@ -241,6 +250,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
         editMode = !editMode;
         markDirtyAndSync();
         return true;
+    }
+
+    public void clearEditMode(UUID playerUuid) {
+        if (!isHost(playerUuid) || !editMode) return;
+        editMode = false;
+        markDirtyAndSync();
     }
 
     private void resetBoard() {

@@ -20,9 +20,14 @@ import site.leawsic.chess.network.ChessNetwork;
 import java.util.UUID;
 
 public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
+    private static final int MIN_BACKGROUND_WIDTH = 280;
+    private static final int MIN_BACKGROUND_HEIGHT = 220;
+    private static final int MAX_SCREEN_MARGIN = 16;
+
     private final ChessGameConfig config;
     private final BlockPos boardPos;
-    private int boardLeft, boardTop, boardWidth, boardHeight, cellSize;
+    private int boardLeft, boardTop, boardWidth, boardHeight, cellSize, scaledBoardTextureWidth, scaledBoardTextureHeight;
+    private float boardScale = 1.0f;
     private ButtonWidget clearButton, editModeButton;
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
@@ -35,28 +40,37 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         this.boardPos = handler.getBoardPos();
         this.boardWidth = (config.getCols() - 1) * config.getBoardCellPixelSize();
         this.boardHeight = (config.getRows() - 1) * config.getBoardCellPixelSize();
-        this.backgroundWidth = Math.max(360, Math.max(boardWidth, config.getBoardTextureWidth()) + 32);
-        this.backgroundHeight = Math.max(280, Math.max(boardHeight, config.getBoardTextureHeight()) + 80);
+        this.backgroundWidth = Math.max(MIN_BACKGROUND_WIDTH, Math.max(boardWidth, config.getBoardTextureWidth()) + 32);
+        this.backgroundHeight = Math.max(MIN_BACKGROUND_HEIGHT, Math.max(boardHeight, config.getBoardTextureHeight()) + 80);
     }
 
     @Override
     protected void init() {
         super.init();
         this.playerInventoryTitleY = -1000;
+        this.backgroundWidth = Math.min(width - MAX_SCREEN_MARGIN * 2,
+                Math.max(MIN_BACKGROUND_WIDTH, Math.max(boardWidth, config.getBoardTextureWidth()) + 32));
+        this.backgroundHeight = Math.min(height - MAX_SCREEN_MARGIN * 2,
+                Math.max(MIN_BACKGROUND_HEIGHT, Math.max(boardHeight, config.getBoardTextureHeight()) + 80));
+        this.x = (width - backgroundWidth) / 2;
+        this.y = (height - backgroundHeight) / 2;
 
-        this.boardLeft = x + (backgroundWidth - config.getBoardTextureWidth()) / 2;
-        this.boardTop = y + 30;
-        this.cellSize = config.getBoardCellPixelSize();
+        int availableBoardWidth = Math.max(1, backgroundWidth - 16);
+        int availableBoardHeight = Math.max(1, backgroundHeight - 72);
+        this.boardScale = Math.min(1.0f, Math.min(
+                availableBoardWidth / (float) config.getBoardTextureWidth(),
+                availableBoardHeight / (float) config.getBoardTextureHeight()
+        ));
+        this.scaledBoardTextureWidth = Math.round(config.getBoardTextureWidth() * boardScale);
+        this.scaledBoardTextureHeight = Math.round(config.getBoardTextureHeight() * boardScale);
+        this.boardLeft = x + (backgroundWidth - scaledBoardTextureWidth) / 2;
+        this.boardTop = y + Math.max(8, Math.min(30, backgroundHeight - scaledBoardTextureHeight - 52));
+        this.cellSize = Math.max(1, Math.round(config.getBoardCellPixelSize() * boardScale));
+        this.boardWidth = Math.round((config.getCols() - 1) * config.getBoardCellPixelSize() * boardScale);
+        this.boardHeight = Math.round((config.getRows() - 1) * config.getBoardCellPixelSize() * boardScale);
 
-        int buttonY1 = y + backgroundHeight - 50; // 第一行
-        int buttonY2 = y + backgroundHeight - 25; // 第二行
-        int buttonSpacing = 5; // 按钮间距
-
-        // 左侧按钮组总宽度
-        int leftButtonsWidth = 60 + buttonSpacing + 80;
-
-        // 检查是否有足够空间放置右侧联机按钮（至少需要150px空间）
-        boolean hasSpaceForRightButtons = (backgroundWidth - leftButtonsWidth - 40) >= 150;
+        int buttonY1 = y + backgroundHeight - 48;
+        int buttonY2 = y + backgroundHeight - 24;
 
         clearButton = ButtonWidget.builder(Text.translatable("gui.chess.clear"), btn -> sendPacket(ChessNetwork.CLEAR_BOARD))
                 .dimensions(x + 10, buttonY1, 60, 20).build();
@@ -67,22 +81,15 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             updatePieceSelectButtons();
         }).dimensions(x + 75, buttonY1, 80, 20).build();
 
-        if (hasSpaceForRightButtons) {
-            joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> sendPacket(ChessNetwork.JOIN_GAME))
-                    .dimensions(x + backgroundWidth - 145, buttonY1, 65, 20).build();
-            leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> sendPacket(ChessNetwork.LEAVE_GAME))
-                    .dimensions(x + backgroundWidth - 75, buttonY1, 65, 20).build();
-        } else {
-            joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> sendPacket(ChessNetwork.JOIN_GAME))
-                    .dimensions(x + backgroundWidth - 145, buttonY2, 65, 20).build();
-            leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> sendPacket(ChessNetwork.LEAVE_GAME))
-                    .dimensions(x + backgroundWidth - 75, buttonY2, 65, 20).build();
-        }
+        joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> sendPacket(ChessNetwork.JOIN_GAME))
+                .dimensions(x + backgroundWidth - 145, buttonY1, 65, 20).build();
+        leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> sendPacket(ChessNetwork.LEAVE_GAME))
+                .dimensions(x + backgroundWidth - 75, buttonY1, 65, 20).build();
 
         hostBlackButton = ButtonWidget.builder(Text.translatable("gui.chess.host_black"), btn -> sendPacket(ChessNetwork.SET_PIECE_TYPES, 1, 2))
-                .dimensions(x + 160, buttonY2, 75, 20).build();
+                .dimensions(x + Math.max(10, backgroundWidth - 205), buttonY2, 95, 20).build();
         hostWhiteButton = ButtonWidget.builder(Text.translatable("gui.chess.host_white"), btn -> sendPacket(ChessNetwork.SET_PIECE_TYPES, 2, 1))
-                .dimensions(x + 240, buttonY2, 75, 20).build();
+                .dimensions(x + Math.max(110, backgroundWidth - 105), buttonY2, 95, 20).build();
 
         addDrawableChild(clearButton);
         addDrawableChild(editModeButton);
@@ -106,7 +113,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         int playerCount = config.getPlayerCount();
         pieceSelectButtons = new ButtonWidget[playerCount];
 
-        int buttonY = y + backgroundHeight - 25; // 第二行
+        int buttonY = y + backgroundHeight - 24;
         int startX = x + 10;
         int buttonSpacing = 5;
         int buttonWidth = 55;
@@ -177,12 +184,14 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int gridLeft = boardLeft + config.getBoardLeftU();
-        int gridTop = boardTop + config.getBoardTopV();
-        if (mouseX >= gridLeft - 4 && mouseX <= gridLeft + boardWidth + 4 &&
-                mouseY >= gridTop - 4 && mouseY <= gridTop + boardHeight + 4) {
-            int col = Math.round((float) (mouseX - gridLeft) / cellSize);
-            int row = Math.round((float) (mouseY - gridTop) / cellSize);
+        float logicalMouseX = (float) ((mouseX - boardLeft) / boardScale);
+        float logicalMouseY = (float) ((mouseY - boardTop) / boardScale);
+        int logicalBoardWidth = (config.getCols() - 1) * config.getBoardCellPixelSize();
+        int logicalBoardHeight = (config.getRows() - 1) * config.getBoardCellPixelSize();
+        if (logicalMouseX >= config.getBoardLeftU() - 4 && logicalMouseX <= config.getBoardLeftU() + logicalBoardWidth + 4 &&
+                logicalMouseY >= config.getBoardTopV() - 4 && logicalMouseY <= config.getBoardTopV() + logicalBoardHeight + 4) {
+            int col = Math.round((logicalMouseX - config.getBoardLeftU()) / config.getBoardCellPixelSize());
+            int row = Math.round((logicalMouseY - config.getBoardTopV()) / config.getBoardCellPixelSize());
             if (col >= 0 && col < config.getCols() && row >= 0 && row < config.getRows()) {
                 BaseBoardBlockEntity be = getBlockEntity();
 
@@ -225,19 +234,21 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         Identifier boardTex = Chess.id("textures/" + config.getBoardTopTexture().getPath() + ".png");
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, boardTex);
+        context.getMatrices().push();
+        context.getMatrices().translate(boardLeft, boardTop, 0);
+        context.getMatrices().scale(boardScale, boardScale, 1.0f);
         context.drawTexture(
                 boardTex,
-                boardLeft, boardTop,
+                0, 0,
                 0, 0,
                 config.getBoardTextureWidth(), config.getBoardTextureHeight(),
                 config.getBoardTextureWidth(), config.getBoardTextureHeight()
         );
+        context.getMatrices().pop();
 
         // 在背景层绘制棋子，确保坐标系统一致
         BaseBoardBlockEntity be = getBlockEntity();
         if (be != null) {
-            int gridLeft = boardLeft + config.getBoardLeftU();
-            int gridTop = boardTop + config.getBoardTopV();
             int[][] board = be.getBoard();
 
             for (int row = 0; row < config.getRows(); row++) {
@@ -246,20 +257,17 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                     if (piece == config.getEmptyValue()) continue;
 
                     Identifier pieceTex = Chess.id("textures/" + config.getPieceTexture(piece).getPath() + ".png");
-                    // 计算棋子绘制大小：根据配置的棋盘格子像素大小自动适配
                     int drawSize = config.getBoardCellPixelSize();
-
-                    // 计算棋子中心位置（在网格交叉点上）
-                    int centerX = gridLeft + col * config.getBoardCellPixelSize();
-                    int centerY = gridTop + row * config.getBoardCellPixelSize();
-
-                    // 棋子居中绘制
+                    int centerX = config.getBoardLeftU() + col * config.getBoardCellPixelSize();
+                    int centerY = config.getBoardTopV() + row * config.getBoardCellPixelSize();
                     int drawX = centerX - drawSize / 2;
                     int drawY = centerY - drawSize / 2;
 
                     RenderSystem.setShader(GameRenderer::getPositionTexProgram);
                     RenderSystem.setShaderTexture(0, pieceTex);
-                    // 根据配置的pieceTextureSize和实际绘制大小进行缩放
+                    context.getMatrices().push();
+                    context.getMatrices().translate(boardLeft, boardTop, 0);
+                    context.getMatrices().scale(boardScale, boardScale, 1.0f);
                     context.drawTexture(
                             pieceTex,
                             drawX, drawY,
@@ -267,6 +275,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                             drawSize, drawSize,
                             config.getPieceTextureSize(), config.getPieceTextureSize()
                     );
+                    context.getMatrices().pop();
                 }
             }
         }
@@ -418,11 +427,12 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         boolean isInGame = be.isInGame(playerUuid);
         boolean isMultiplayer = be.isMultiplayer();
         boolean isFull = be.isMultiplayer() && be.getHostPlayer() != null && be.getGuestPlayer() != null;
+        boolean hasPieces = hasPieces(be);
 
-        hostBlackButton.visible = isMultiplayer && isHost;
-        hostWhiteButton.visible = isMultiplayer && isHost;
-        hostBlackButton.active = isMultiplayer && isHost && be.getHostPieceType() != 1;
-        hostWhiteButton.active = isMultiplayer && isHost && be.getHostPieceType() != 2;
+        hostBlackButton.visible = isMultiplayer && isHost && !hasPieces;
+        hostWhiteButton.visible = isMultiplayer && isHost && !hasPieces;
+        hostBlackButton.active = hostBlackButton.visible && be.getHostPieceType() != 1;
+        hostWhiteButton.active = hostWhiteButton.visible && be.getHostPieceType() != 2;
 
         if (!isInGame && isFull) {
             clearButton.visible = false;
@@ -447,7 +457,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         if (isMultiplayer) {
             clearButton.active = isHost && be.isGameOver();
         } else {
-            clearButton.active = isInGame && hasPieces(be);
+            clearButton.active = isInGame && hasPieces;
         }
     }
 
@@ -461,12 +471,29 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         return false;
     }
 
+    private boolean isLocalPlayerInMultiplayerGame() {
+        if (client == null || client.player == null) return false;
+        BaseBoardBlockEntity be = getBlockEntity();
+        return be != null && be.isMultiplayer() && be.isInGame(client.player.getUuid());
+    }
+
     private BaseBoardBlockEntity getBlockEntity() {
         if (client == null || client.world == null) return null;
         if (client.world.getBlockEntity(boardPos) instanceof BaseBoardBlockEntity boardEntity) {
             return boardEntity;
         }
         return null;
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !isLocalPlayerInMultiplayerGame();
+    }
+
+    @Override
+    public void close() {
+        if (isLocalPlayerInMultiplayerGame()) return;
+        super.close();
     }
 
     @Override

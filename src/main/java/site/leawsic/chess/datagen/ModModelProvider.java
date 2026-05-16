@@ -7,16 +7,17 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricModelProvider;
 import net.minecraft.block.Block;
 import net.minecraft.data.client.BlockStateModelGenerator;
+import net.minecraft.data.client.BlockStateVariant;
 import net.minecraft.data.client.ItemModelGenerator;
-import net.minecraft.data.client.Model;
 import net.minecraft.data.client.ModelIds;
+import net.minecraft.data.client.Models;
+import net.minecraft.data.client.VariantSettings;
+import net.minecraft.data.client.VariantsBlockStateSupplier;
 import net.minecraft.util.Identifier;
-import site.leawsic.chess.Chess;
 import site.leawsic.chess.block.ModBlocks;
 import site.leawsic.chess.config.ChessGameConfig;
 import site.leawsic.chess.config.GomokuConfig;
 
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -66,17 +67,15 @@ public class ModModelProvider extends FabricModelProvider {
     public void generateBlockStateModels(BlockStateModelGenerator generator) {
         ChessGameConfig config = GomokuConfig.CONFIG;
         Identifier modelId = generateThinBoardModel(ModBlocks.GO_BOARD, config, generator.modelCollector);
-        generator.blockStateCollector.accept(
-                BlockStateModelGenerator.createSingletonBlockState(ModBlocks.GO_BOARD, modelId)
-        );
+        generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
+                ModBlocks.GO_BOARD,
+                BlockStateVariant.create().put(VariantSettings.MODEL, modelId)
+        ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
     }
 
     @Override
     public void generateItemModels(ItemModelGenerator generator) {
-        generator.register(
-                ModBlocks.GO.item(),
-                new Model(Optional.of(Chess.id("block/go_board_thin")), Optional.empty())
-        );
+        generator.register(ModBlocks.GO.item(), Models.GENERATED);
     }
 
     private Identifier generateThinBoardModel(Block block, ChessGameConfig config,

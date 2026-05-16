@@ -53,13 +53,7 @@ public class ChessNetwork {
             BlockPos pos = buf.readBlockPos();
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
-                    // 如果棋盘没有被占用，设置为房主（这种情况不应该发生，因为onUse已处理）
-                    if (boardEntity.getHostPlayer() == null) {
-                        boardEntity.setHost(player.getUuid());
-                    } else if (!boardEntity.isInGame(player.getUuid())) {
-                        // 否则作为客人加入
-                        boardEntity.joinGame(player.getUuid());
-                    }
+                    boardEntity.joinGame(player.getUuid());
                 }
             });
         });
