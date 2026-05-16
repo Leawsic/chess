@@ -74,7 +74,7 @@ public class ModModelProvider extends FabricModelProvider {
     @Override
     public void generateItemModels(ItemModelGenerator generator) {
         generator.register(
-                ModBlocks.GO_BOARD.asItem(),
+                ModBlocks.GO.item(),
                 new Model(Optional.of(Chess.id("block/go_board_thin")), Optional.empty())
         );
     }

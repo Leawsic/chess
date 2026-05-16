@@ -20,7 +20,6 @@ import java.util.function.Supplier;
 
 public class BoardGameRegistry {
     public static BoardGameObjects register(String name, ChessGameConfig config) {
-        // 提前声明 holders，用于打破循环引用
         BlockEntityType<?>[] beHolder = new BlockEntityType<?>[1];
         ScreenHandlerType<?>[] shHolder = new ScreenHandlerType<?>[1];
 
@@ -29,7 +28,6 @@ public class BoardGameRegistry {
         // 方块实体类型供应商
         Supplier<BlockEntityType<?>> beTypeSupplier = () -> beHolder[0];
 
-        // 注册方块（需要两个供应商）
         Block block = Registry.register(
                 Registries.BLOCK,
                 Chess.id(name),

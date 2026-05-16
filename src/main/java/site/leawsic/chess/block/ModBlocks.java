@@ -4,6 +4,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.screen.ScreenHandlerType;
 import site.leawsic.chess.config.GomokuConfig;
+import site.leawsic.chess.screen.BaseBoardScreenHandler;
 
 public class ModBlocks {
     // 游戏对象
@@ -11,7 +12,7 @@ public class ModBlocks {
 
     public static Block GO_BOARD;
     public static BlockEntityType<BaseBoardBlockEntity> GO_BOARD_BLOCK_ENTITY;
-    public static ScreenHandlerType<site.leawsic.chess.screen.BaseBoardScreenHandler> GO_BOARD_SCREEN_HANDLER;
+    public static ScreenHandlerType<BaseBoardScreenHandler> GO_BOARD_SCREEN_HANDLER;
 
     public static void register() {
         GO = BoardGameRegistry.register("go_board", GomokuConfig.CONFIG);

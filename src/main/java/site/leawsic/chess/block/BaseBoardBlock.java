@@ -59,6 +59,14 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
+            BlockEntity be = world.getBlockEntity(pos);
+            if (be instanceof BaseBoardBlockEntity boardEntity) {
+                // 如果棋盘没有被占用，自动设置为房主
+                if (boardEntity.getHostPlayer() == null) {
+                    boardEntity.setHost(player.getUuid());
+                }
+            }
+
             player.openHandledScreen(new ExtendedScreenHandlerFactory() {
                 @Nullable
                 @Override
