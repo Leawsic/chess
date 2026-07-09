@@ -18,8 +18,9 @@ public class ChessGameConfig {
     private final Identifier boardSideTexture;
     private final String translationKey;    // 用于方块名称和 GUI 标题
     private final List<int[]> starPoints;   // 星位坐标 {col, row}（可选）
-    // 落子规则：返回 PlaceResult（是否成功、是否切换玩家、游戏是否结束）
+    // 落子规则只负责判定和返回副作用，由方块实体统一写入棋盘状态。
     private final BiFunction<BaseBoardBlockEntity, Move, PlaceResult> placeRule;
+    private final BiFunction<BaseBoardBlockEntity, Integer, PlaceResult> passRule;
 
     private final int boardTextureWidth;   // 纹理总宽度（像素）
     private final int boardTextureHeight;  // 纹理总高度
@@ -41,6 +42,7 @@ public class ChessGameConfig {
         this.translationKey = builder.translationKey;
         this.starPoints = builder.starPoints != null ? List.copyOf(builder.starPoints) : List.of();
         this.placeRule = builder.placeRule;
+        this.passRule = builder.passRule;
         this.boardTextureWidth = builder.boardTextureWidth;
         this.boardTextureHeight = builder.boardTextureHeight;
         this.boardLeftU = builder.boardLeftU;
@@ -128,6 +130,15 @@ public class ChessGameConfig {
         return placeRule.apply(boardEntity, move);
     }
 
+    public boolean supportsPass() {
+        return passRule != null;
+    }
+
+    public PlaceResult checkPass(BaseBoardBlockEntity boardEntity, int player) {
+        if (passRule == null) return PlaceResult.fail();
+        return passRule.apply(boardEntity, player);
+    }
+
     public int getPieceTextureSize() {
         return pieceTextureSize;
     }
@@ -138,17 +149,27 @@ public class ChessGameConfig {
     }
 
     // 落子结果
-    public record PlaceResult(boolean success, boolean switchPlayer, boolean gameOver, int winner) {
+    public record PlaceResult(boolean success, boolean switchPlayer, boolean gameOver, int winner,
+                              List<Move> capturedPieces, int koX, int koY,
+                              double blackScore, double whiteScore) {
         public static PlaceResult success(boolean switchPlayer) {
-            return new PlaceResult(true, switchPlayer, false, -1);
+            return success(switchPlayer, List.of(), -1, -1);
+        }
+
+        public static PlaceResult success(boolean switchPlayer, List<Move> capturedPieces, int koX, int koY) {
+            return new PlaceResult(true, switchPlayer, false, -1, List.copyOf(capturedPieces), koX, koY, 0.0, 0.0);
         }
 
         public static PlaceResult gameOver(int winner) {
-            return new PlaceResult(true, false, true, winner);
+            return gameOver(winner, 0.0, 0.0);
+        }
+
+        public static PlaceResult gameOver(int winner, double blackScore, double whiteScore) {
+            return new PlaceResult(true, false, true, winner, List.of(), -1, -1, blackScore, whiteScore);
         }
 
         public static PlaceResult fail() {
-            return new PlaceResult(false, false, false, -1);
+            return new PlaceResult(false, false, false, -1, List.of(), -1, -1, 0.0, 0.0);
         }
     }
 
@@ -165,6 +186,7 @@ public class ChessGameConfig {
         private String translationKey = "board.generic";
         private List<int[]> starPoints = List.of();
         private BiFunction<BaseBoardBlockEntity, Move, PlaceResult> placeRule;
+        private BiFunction<BaseBoardBlockEntity, Integer, PlaceResult> passRule;
 
         private int boardTextureWidth = 256;   // 纹理总宽度（像素）
         private int boardTextureHeight = 256;  // 纹理总高度
@@ -260,6 +282,11 @@ public class ChessGameConfig {
 
         public Builder placeRule(BiFunction<BaseBoardBlockEntity, Move, PlaceResult> rule) {
             this.placeRule = rule;
+            return this;
+        }
+
+        public Builder passRule(BiFunction<BaseBoardBlockEntity, Integer, PlaceResult> rule) {
+            this.passRule = rule;
             return this;
         }
 

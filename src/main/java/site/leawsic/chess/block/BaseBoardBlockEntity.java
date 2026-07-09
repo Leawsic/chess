@@ -24,6 +24,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private int currentPlayer;
     private boolean gameOver;
     private boolean editMode;
+    private int winner;
+    private double blackScore;
+    private double whiteScore;
+    private int consecutivePasses;
+    private int koX;
+    private int koY;
     
     // 联机相关字段
     private UUID hostPlayer; // 房主的UUID
@@ -39,6 +45,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
         this.currentPlayer = config.getInitialPlayer();
         this.gameOver = false;
         this.editMode = false;
+        this.winner = -1;
+        this.blackScore = 0.0;
+        this.whiteScore = 0.0;
+        this.consecutivePasses = 0;
+        this.koX = -1;
+        this.koY = -1;
         this.hostPlayer = null;
         this.guestPlayer = null;
         this.isMultiplayer = false;
@@ -64,6 +76,30 @@ public class BaseBoardBlockEntity extends BlockEntity {
 
     public boolean isEditMode() {
         return editMode;
+    }
+
+    public int getWinner() {
+        return winner;
+    }
+
+    public double getBlackScore() {
+        return blackScore;
+    }
+
+    public double getWhiteScore() {
+        return whiteScore;
+    }
+
+    public int getConsecutivePasses() {
+        return consecutivePasses;
+    }
+
+    public int getKoX() {
+        return koX;
+    }
+
+    public int getKoY() {
+        return koY;
     }
     
     // 联机相关方法
@@ -221,11 +257,53 @@ public class BaseBoardBlockEntity extends BlockEntity {
         if (!result.success()) return false;
 
         board[y][x] = player;
+        for (Move captured : result.capturedPieces()) {
+            board[captured.y()][captured.x()] = config.getEmptyValue();
+        }
         moveHistory.add(new Move(x, y, player));
+        consecutivePasses = 0;
+        koX = result.koX();
+        koY = result.koY();
 
         if (result.gameOver()) {
             gameOver = true;
+            winner = result.winner();
+            blackScore = result.blackScore();
+            whiteScore = result.whiteScore();
         } else if (result.switchPlayer() && !editMode) {
+            currentPlayer = nextPlayer(currentPlayer);
+        }
+        markDirtyAndSync();
+        return true;
+    }
+
+    public boolean passTurn(UUID playerUuid) {
+        if (!config.supportsPass() || gameOver || editMode) return false;
+
+        int player = currentPlayer;
+        if (isMultiplayer) {
+            if (!isInGame(playerUuid)) return false;
+            int playerPieceType = getPlayerPieceType(playerUuid);
+            if (playerPieceType != currentPlayer) return false;
+            player = playerPieceType;
+        } else if (hostPlayer != null && !isHost(playerUuid)) {
+            return false;
+        }
+
+        ChessGameConfig.PlaceResult result = config.checkPass(this, player);
+        if (!result.success()) return false;
+
+        moveHistory.add(new Move(-1, -1, player));
+        consecutivePasses++;
+        koX = -1;
+        koY = -1;
+
+        if (result.gameOver()) {
+            gameOver = true;
+            winner = result.winner();
+            blackScore = result.blackScore();
+            whiteScore = result.whiteScore();
+        } else if (result.switchPlayer()) {
             currentPlayer = nextPlayer(currentPlayer);
         }
         markDirtyAndSync();
@@ -262,6 +340,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
         board = new int[config.getRows()][config.getCols()];
         moveHistory.clear();
         gameOver = false;
+        winner = -1;
+        blackScore = 0.0;
+        whiteScore = 0.0;
+        consecutivePasses = 0;
+        koX = -1;
+        koY = -1;
         currentPlayer = config.getInitialPlayer();
     }
 
@@ -300,6 +384,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
         nbt.putInt("CurrentPlayer", currentPlayer);
         nbt.putBoolean("GameOver", gameOver);
         nbt.putBoolean("EditMode", editMode);
+        nbt.putInt("Winner", winner);
+        nbt.putDouble("BlackScore", blackScore);
+        nbt.putDouble("WhiteScore", whiteScore);
+        nbt.putInt("ConsecutivePasses", consecutivePasses);
+        nbt.putInt("KoX", koX);
+        nbt.putInt("KoY", koY);
         
         // 保存联机状态
         if (hostPlayer != null) {
@@ -325,6 +415,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
         currentPlayer = nbt.getInt("CurrentPlayer");
         gameOver = nbt.getBoolean("GameOver");
         editMode = nbt.getBoolean("EditMode");
+        winner = nbt.contains("Winner") ? nbt.getInt("Winner") : -1;
+        blackScore = nbt.getDouble("BlackScore");
+        whiteScore = nbt.getDouble("WhiteScore");
+        consecutivePasses = nbt.getInt("ConsecutivePasses");
+        koX = nbt.contains("KoX") ? nbt.getInt("KoX") : -1;
+        koY = nbt.contains("KoY") ? nbt.getInt("KoY") : -1;
         
         // 读取联机状态
         if (nbt.containsUuid("HostPlayer")) {
@@ -338,8 +434,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
             guestPlayer = null;
         }
         isMultiplayer = nbt.getBoolean("IsMultiplayer");
-        hostPieceType = nbt.getInt("HostPieceType");
-        guestPieceType = nbt.getInt("GuestPieceType");
+        hostPieceType = nbt.contains("HostPieceType") ? nbt.getInt("HostPieceType") : 1;
+        guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : 2;
     }
 
     @Nullable

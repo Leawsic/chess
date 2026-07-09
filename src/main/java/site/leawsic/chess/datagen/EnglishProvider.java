@@ -14,7 +14,8 @@ public class EnglishProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(TranslationBuilder translationBuilder) {
-        translationBuilder.add(ModBlocks.GO_BOARD, "Gomoku Board");
+        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "Gomoku Board");
+        translationBuilder.add(ModBlocks.GO_BOARD, "Go Board");
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "Chess Game");
         translationBuilder.add("gui.chess.clear", "Clear");
         translationBuilder.add("gui.chess.edit_mode", "Edit Mode");
@@ -38,5 +39,7 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.turn_format", "%s's Turn");
         translationBuilder.add("gui.chess.winner_suffix", " Wins!");
         translationBuilder.add("gui.chess.clear_hint", "Click Clear to start a new game");
+        translationBuilder.add("gui.chess.pass", "Pass");
+        translationBuilder.add("gui.chess.draw", "Draw");
     }
 }

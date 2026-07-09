@@ -14,8 +14,9 @@ public class ModItemGroup {
             Chess.id("chess_group"),
             FabricItemGroup.builder()
                     .displayName(Text.translatable("itemGroup.chess.chess_group"))
-                    .icon(() -> new ItemStack(ModItems.GO_BOARD))
+                    .icon(() -> new ItemStack(ModItems.GOMOKU_BOARD))
                     .entries((displayContext, entries) -> {
+                        entries.add(ModItems.GOMOKU_BOARD);
                         entries.add(ModItems.GO_BOARD);
                     })
                     .build()

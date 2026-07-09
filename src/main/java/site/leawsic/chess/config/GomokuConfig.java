@@ -24,7 +24,7 @@ public class GomokuConfig {
             .boardTopTexture(Chess.id("block/go_board_top"))
             .boardBottomTexture(Chess.id("block/go_board_bottom"))
             .boardSideTexture(new Identifier("minecraft","block/birch_planks"))
-            .translationKey("block.chess.go_board")
+            .translationKey("block.chess.gomoku_board")
             .starPoints(List.of(
                     new int[]{3, 3}, new int[]{3, 7}, new int[]{3, 11},
                     new int[]{7, 3}, new int[]{7, 7}, new int[]{7, 11},

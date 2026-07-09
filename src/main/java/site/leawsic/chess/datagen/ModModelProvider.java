@@ -16,6 +16,7 @@ import net.minecraft.data.client.VariantsBlockStateSupplier;
 import net.minecraft.util.Identifier;
 import site.leawsic.chess.block.ModBlocks;
 import site.leawsic.chess.config.ChessGameConfig;
+import site.leawsic.chess.config.GoConfig;
 import site.leawsic.chess.config.GomokuConfig;
 
 import java.util.function.BiConsumer;
@@ -65,16 +66,26 @@ public class ModModelProvider extends FabricModelProvider {
 
     @Override
     public void generateBlockStateModels(BlockStateModelGenerator generator) {
-        ChessGameConfig config = GomokuConfig.CONFIG;
-        Identifier modelId = generateThinBoardModel(ModBlocks.GO_BOARD, config, generator.modelCollector);
+        // 五子棋
+        ChessGameConfig gomokuConfig = GomokuConfig.CONFIG;
+        Identifier gomokuModelId = generateThinBoardModel(ModBlocks.GOMOKU_BOARD, gomokuConfig, generator.modelCollector);
+        generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
+                ModBlocks.GOMOKU_BOARD,
+                BlockStateVariant.create().put(VariantSettings.MODEL, gomokuModelId)
+        ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
+
+        // 围棋
+        ChessGameConfig weiqiConfig = GoConfig.CONFIG;
+        Identifier weiqiModelId = generateThinBoardModel(ModBlocks.GO_BOARD, weiqiConfig, generator.modelCollector);
         generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
                 ModBlocks.GO_BOARD,
-                BlockStateVariant.create().put(VariantSettings.MODEL, modelId)
+                BlockStateVariant.create().put(VariantSettings.MODEL, weiqiModelId)
         ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
     }
 
     @Override
     public void generateItemModels(ItemModelGenerator generator) {
+        generator.register(ModBlocks.GOMOKU.item(), Models.GENERATED);
         generator.register(ModBlocks.GO.item(), Models.GENERATED);
     }
 

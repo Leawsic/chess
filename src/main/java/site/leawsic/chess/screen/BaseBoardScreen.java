@@ -28,7 +28,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private final BlockPos boardPos;
     private int boardLeft, boardTop, boardWidth, boardHeight, cellSize, scaledBoardTextureWidth, scaledBoardTextureHeight;
     private float boardScale = 1.0f;
-    private ButtonWidget clearButton, editModeButton;
+    private ButtonWidget clearButton, editModeButton, passButton;
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
     private int selectedPieceType = 1; // 默认选择第一种棋子（黑棋）
@@ -80,6 +80,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             localEditMode = !localEditMode;
             updatePieceSelectButtons();
         }).dimensions(x + 75, buttonY1, 80, 20).build();
+        passButton = ButtonWidget.builder(Text.translatable("gui.chess.pass"), btn -> sendPacket(ChessNetwork.PASS_TURN))
+                .dimensions(x + 160, buttonY1, 55, 20).build();
 
         joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> sendPacket(ChessNetwork.JOIN_GAME))
                 .dimensions(x + backgroundWidth - 145, buttonY1, 65, 20).build();
@@ -93,6 +95,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         addDrawableChild(clearButton);
         addDrawableChild(editModeButton);
+        addDrawableChild(passButton);
         addDrawableChild(joinButton);
         addDrawableChild(leaveButton);
         addDrawableChild(hostBlackButton);
@@ -356,11 +359,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         context.fill(0, 0, backgroundWidth, backgroundHeight, (overlayAlpha << 24));
 
         // 获取获胜者
-        int winner = 0;
-        // 从最后一步棋判断获胜者
-        if (!be.getMoveHistory().isEmpty()) {
-            winner = be.getMoveHistory().get(be.getMoveHistory().size() - 1).player();
-        }
+        int winner;
+        winner = be.getWinner();
 
         // 中央显示获胜信息
         String winnerText;
@@ -371,8 +371,10 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             UUID winnerUuid;
             if (winner == be.getHostPieceType()) {
                 winnerUuid = be.getHostPlayer();
-            } else {
+            } else if (winner == be.getGuestPieceType()) {
                 winnerUuid = be.getGuestPlayer();
+            } else {
+                winnerUuid = null;
             }
 
             String winnerName = "Unknown";
@@ -383,7 +385,9 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                 }
             }
 
-            winnerText = winnerName + Text.translatable("gui.chess.winner_suffix").getString();
+            winnerText = winner > 0
+                    ? winnerName + Text.translatable("gui.chess.winner_suffix").getString()
+                    : Text.translatable("gui.chess.draw").getString();
             winnerColor = winner == 1 ? 0x000000 : 0xFFFFFF;
         } else {
             // 单人模式：从配置中获取获胜棋子名称
@@ -392,10 +396,13 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                 winnerText = Text.translatable("gui.chess.piece." + winnerPieceName).getString() +
                         Text.translatable("gui.chess.winner_suffix").getString();
             } else {
-                // 防御性编程：如果winner无效，显示默认文本
-                winnerText = Text.translatable("gui.chess.game_over").getString();
+                winnerText = Text.translatable("gui.chess.draw").getString();
             }
             winnerColor = winner == 1 ? 0x404040 : 0xFFFFFF;
+        }
+
+        if (be.getBlackScore() > 0 || be.getWhiteScore() > 0) {
+            winnerText += String.format(" (B %.1f / W %.1f)", be.getBlackScore(), be.getWhiteScore());
         }
 
         // 绘制标题
@@ -437,6 +444,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         if (!isInGame && isFull) {
             clearButton.visible = false;
             editModeButton.visible = false;
+            passButton.visible = false;
             joinButton.visible = false;
             leaveButton.visible = false;
             hostBlackButton.visible = false;
@@ -453,6 +461,9 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         editModeButton.visible = true;
         editModeButton.active = !isMultiplayer && isInGame && !be.isGameOver();
         if (!editModeButton.active) localEditMode = false;
+
+        passButton.visible = config.supportsPass();
+        passButton.active = config.supportsPass() && isInGame && !be.isGameOver() && !be.isEditMode();
 
         if (isMultiplayer) {
             clearButton.active = isHost && be.isGameOver();
