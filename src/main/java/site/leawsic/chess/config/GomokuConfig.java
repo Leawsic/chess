@@ -21,7 +21,7 @@ public class GomokuConfig {
                     Chess.id("block/piece_black"),
                     Chess.id("block/piece_white")
             )
-            .boardTopTexture(Chess.id("block/go_board_top"))
+            .boardTopTexture(Chess.id("block/gomoku_board_top"))
             .boardBottomTexture(Chess.id("block/go_board_bottom"))
             .boardSideTexture(new Identifier("minecraft","block/birch_planks"))
             .translationKey("block.chess.gomoku_board")
