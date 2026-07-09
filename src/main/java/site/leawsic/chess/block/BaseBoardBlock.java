@@ -78,9 +78,14 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
         if (!world.isClient) {
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof BaseBoardBlockEntity boardEntity) {
-                // 如果棋盘没有被占用，自动设置为房主
+                // 如果棋盘没有被占用，自动设置为房主。
                 if (boardEntity.getHostPlayer() == null) {
                     boardEntity.setHost(player.getUuid());
+                } else if (!boardEntity.isMultiplayer()
+                        && !boardEntity.isInGame(player.getUuid())
+                        && player instanceof ServerPlayerEntity serverPlayer
+                        && serverPlayer.getServer().getPlayerManager().getPlayer(boardEntity.getHostPlayer()) == null) {
+                    boardEntity.replaceHost(player.getUuid());
                 }
             }
 
@@ -90,8 +95,8 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
                 public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
                     BlockEntity be = world.getBlockEntity(pos);
                     if (be instanceof BaseBoardBlockEntity base) {
-                        return new BaseBoardScreenHandler(screenHandlerTypeSupplier.get(),syncId, inv, pos,
-                                base.getConfig());
+                        return new BaseBoardScreenHandler(screenHandlerTypeSupplier.get(), syncId, inv, pos,
+                                base.getConfig(), base.isInGame(player.getUuid()));
                     }
                     return null;
                 }
@@ -108,6 +113,8 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
                 @Override
                 public void writeScreenOpeningData(ServerPlayerEntity player, PacketByteBuf buf) {
                     buf.writeBlockPos(pos);
+                    BlockEntity be = world.getBlockEntity(pos);
+                    buf.writeBoolean(be instanceof BaseBoardBlockEntity base && base.isInGame(player.getUuid()));
                 }
             });
         }

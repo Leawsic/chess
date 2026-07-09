@@ -148,6 +148,16 @@ public class BaseBoardBlockEntity extends BlockEntity {
             markDirtyAndSync();
         }
     }
+
+    public void replaceHost(UUID playerUuid) {
+        this.hostPlayer = playerUuid;
+        this.guestPlayer = null;
+        this.isMultiplayer = false;
+        this.editMode = false;
+        this.hostPieceType = 1;
+        this.guestPieceType = 2;
+        markDirtyAndSync();
+    }
     
     /**
      * 客人加入对局
@@ -267,6 +277,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
 
         if (result.gameOver()) {
             gameOver = true;
+            editMode = false;
             winner = result.winner();
             blackScore = result.blackScore();
             whiteScore = result.whiteScore();
@@ -300,6 +311,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
 
         if (result.gameOver()) {
             gameOver = true;
+            editMode = false;
             winner = result.winner();
             blackScore = result.blackScore();
             whiteScore = result.whiteScore();
@@ -340,6 +352,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         board = new int[config.getRows()][config.getCols()];
         moveHistory.clear();
         gameOver = false;
+        editMode = false;
         winner = -1;
         blackScore = 0.0;
         whiteScore = 0.0;

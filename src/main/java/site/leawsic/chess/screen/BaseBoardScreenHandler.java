@@ -12,13 +12,22 @@ import site.leawsic.chess.config.ChessGameConfig;
 public class BaseBoardScreenHandler extends ScreenHandler {
     private final ChessGameConfig config;
     private final BlockPos boardPos;
+    private final boolean openingPlayerInGame;
+
+    public BaseBoardScreenHandler(ScreenHandlerType<?> type, int syncId,
+                                   PlayerInventory playerInventory,
+                                   BlockPos boardPos, ChessGameConfig config) {
+        this(type, syncId, playerInventory, boardPos, config, false);
+    }
 
     public BaseBoardScreenHandler(ScreenHandlerType<?> type, int syncId,
                                   PlayerInventory playerInventory,
-                                  BlockPos boardPos, ChessGameConfig config) {
+                                  BlockPos boardPos, ChessGameConfig config,
+                                  boolean openingPlayerInGame) {
         super(type, syncId);
         this.boardPos = boardPos;
         this.config = config;
+        this.openingPlayerInGame = openingPlayerInGame;
     }
 
     public ChessGameConfig getConfig() {
@@ -27,6 +36,10 @@ public class BaseBoardScreenHandler extends ScreenHandler {
 
     public BlockPos getBoardPos() {
         return boardPos;
+    }
+
+    public boolean isOpeningPlayerInGame() {
+        return openingPlayerInGame;
     }
 
     @Override

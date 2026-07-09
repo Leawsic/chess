@@ -32,7 +32,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
     private int selectedPieceType = 1; // 默认选择第一种棋子（黑棋）
-    private boolean localEditMode = false; // 本地编辑模式状态
+    private boolean localLeftGame = false;
 
     public BaseBoardScreen(BaseBoardScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -74,18 +74,20 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         clearButton = ButtonWidget.builder(Text.translatable("gui.chess.clear"), btn -> sendPacket(ChessNetwork.CLEAR_BOARD))
                 .dimensions(x + 10, buttonY1, 60, 20).build();
-        editModeButton = ButtonWidget.builder(Text.translatable("gui.chess.edit_mode"), btn -> {
-            sendPacket(ChessNetwork.TOGGLE_EDIT_MODE);
-            // 立即切换本地状态并更新按钮
-            localEditMode = !localEditMode;
-            updatePieceSelectButtons();
-        }).dimensions(x + 75, buttonY1, 80, 20).build();
+        editModeButton = ButtonWidget.builder(Text.translatable("gui.chess.edit_mode"), btn -> sendPacket(ChessNetwork.TOGGLE_EDIT_MODE))
+                .dimensions(x + 75, buttonY1, 80, 20).build();
         passButton = ButtonWidget.builder(Text.translatable("gui.chess.pass"), btn -> sendPacket(ChessNetwork.PASS_TURN))
                 .dimensions(x + 160, buttonY1, 55, 20).build();
 
-        joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> sendPacket(ChessNetwork.JOIN_GAME))
+        joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> {
+            localLeftGame = false;
+            sendPacket(ChessNetwork.JOIN_GAME);
+        })
                 .dimensions(x + backgroundWidth - 145, buttonY1, 65, 20).build();
-        leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> sendPacket(ChessNetwork.LEAVE_GAME))
+        leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> {
+            localLeftGame = true;
+            sendPacket(ChessNetwork.LEAVE_GAME);
+        })
                 .dimensions(x + backgroundWidth - 75, buttonY1, 65, 20).build();
 
         hostBlackButton = ButtonWidget.builder(Text.translatable("gui.chess.host_black"), btn -> sendPacket(ChessNetwork.SET_PIECE_TYPES, 1, 2))
@@ -104,11 +106,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         // 初始化棋子选择按钮
         initPieceSelectButtons();
 
-        // 从服务端同步初始的编辑模式状态
-        BaseBoardBlockEntity be = getBlockEntity();
-        if (be != null) {
-            localEditMode = be.isEditMode();
-        }
+        updatePieceSelectButtons(getBlockEntity());
     }
 
     private void initPieceSelectButtons() {
@@ -129,35 +127,34 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                             Text.translatable("gui.chess.piece." + pieceName),
                             btn -> {
                                 selectedPieceType = pieceType;
-                                updatePieceSelectButtons();
+                                updatePieceSelectButtons(getBlockEntity());
                             })
                     .dimensions(startX + i * (buttonWidth + buttonSpacing), buttonY, buttonWidth, 20)
                     .build();
         }
 
         // 初始状态下隐藏按钮（非编辑模式）
-        updatePieceSelectButtons();
+        updatePieceSelectButtons(getBlockEntity());
     }
 
-    private void updatePieceSelectButtons() {
+    private void updatePieceSelectButtons(BaseBoardBlockEntity be) {
         if (pieceSelectButtons == null) return;
 
-        // 使用本地状态而不是服务端状态，避免同步延迟
-        boolean isEditMode = localEditMode;
+        boolean showButtons = be != null && be.isEditMode() && !be.isGameOver() && !be.isMultiplayer();
+        showButtons = showButtons && isLocalPlayerInGame(be);
 
         for (int i = 0; i < pieceSelectButtons.length; i++) {
             ButtonWidget btn = pieceSelectButtons[i];
 
             // 高亮当前选中的棋子类型
             int pieceType = i + 1;
-            if (pieceType == selectedPieceType && isEditMode) {
+            if (pieceType == selectedPieceType && showButtons) {
                 btn.setMessage(Text.translatable("gui.chess.piece." + config.getPieceType(pieceType).name() + "_selected"));
             } else {
                 btn.setMessage(Text.translatable("gui.chess.piece." + config.getPieceType(pieceType).name()));
             }
 
-            // 根据编辑模式动态添加或移除按钮
-            if (isEditMode) {
+            if (showButtons) {
                 // 如果按钮不在子组件列表中，则添加
                 if (!children().contains(btn)) {
                     addDrawableChild(btn);
@@ -200,7 +197,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
                 // 检查玩家是否已加入对局
                 if (client != null && client.player != null && be != null) {
-                    if (!be.isInGame(client.player.getUuid())) {
+                    if (!isLocalPlayerInGame(be)) {
                         // 玩家未加入对局，不允许下棋
                         return false;
                     }
@@ -431,13 +428,16 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         UUID playerUuid = client.player.getUuid();
         boolean isHost = be.isHost(playerUuid);
-        boolean isInGame = be.isInGame(playerUuid);
+        boolean isInGame = isLocalPlayerInGame(be);
         boolean isMultiplayer = be.isMultiplayer();
         boolean isFull = be.isMultiplayer() && be.getHostPlayer() != null && be.getGuestPlayer() != null;
         boolean hasPieces = hasPieces(be);
+        boolean gameOver = be.isGameOver();
 
-        hostBlackButton.visible = isMultiplayer && isHost && !hasPieces;
-        hostWhiteButton.visible = isMultiplayer && isHost && !hasPieces;
+        updatePieceSelectButtons(be);
+
+        hostBlackButton.visible = isMultiplayer && isHost && !hasPieces && !gameOver;
+        hostWhiteButton.visible = isMultiplayer && isHost && !hasPieces && !gameOver;
         hostBlackButton.active = hostBlackButton.visible && be.getHostPieceType() != 1;
         hostWhiteButton.active = hostWhiteButton.visible && be.getHostPieceType() != 2;
 
@@ -458,15 +458,14 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         leaveButton.visible = isMultiplayer && isInGame;
         leaveButton.active = isMultiplayer && isInGame;
 
-        editModeButton.visible = true;
-        editModeButton.active = !isMultiplayer && isInGame && !be.isGameOver();
-        if (!editModeButton.active) localEditMode = false;
+        editModeButton.visible = !gameOver;
+        editModeButton.active = !isMultiplayer && isInGame && !gameOver;
 
-        passButton.visible = config.supportsPass();
-        passButton.active = config.supportsPass() && isInGame && !be.isGameOver() && !be.isEditMode();
+        passButton.visible = config.supportsPass() && !gameOver;
+        passButton.active = config.supportsPass() && isInGame && !gameOver && !be.isEditMode();
 
         if (isMultiplayer) {
-            clearButton.active = isHost && be.isGameOver();
+            clearButton.active = isHost && gameOver;
         } else {
             clearButton.active = isInGame && hasPieces;
         }
@@ -486,6 +485,13 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         if (client == null || client.player == null) return false;
         BaseBoardBlockEntity be = getBlockEntity();
         return be != null && be.isMultiplayer() && be.isInGame(client.player.getUuid());
+    }
+
+    private boolean isLocalPlayerInGame(BaseBoardBlockEntity be) {
+        if (client == null || client.player == null || be == null) return false;
+        if (!localLeftGame && handler.isOpeningPlayerInGame()) return true;
+        if (be.isInGame(client.player.getUuid())) return true;
+        return !localLeftGame && !be.isMultiplayer() && be.getHostPlayer() == null;
     }
 
     private BaseBoardBlockEntity getBlockEntity() {

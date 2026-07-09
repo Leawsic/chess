@@ -71,7 +71,8 @@ public class BoardGameRegistry {
                 new ExtendedScreenHandlerType<>(
                         (syncId, inv, buf) -> {
                             BlockPos pos = buf.readBlockPos();
-                            return new BaseBoardScreenHandler(shSupplier.get(),syncId, inv, pos, config);
+                            boolean openingPlayerInGame = buf.readBoolean();
+                            return new BaseBoardScreenHandler(shSupplier.get(), syncId, inv, pos, config, openingPlayerInGame);
                         }
                 )
         );
