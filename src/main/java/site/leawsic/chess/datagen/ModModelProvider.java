@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricModelProvider;
 import net.minecraft.block.Block;
 import net.minecraft.data.client.BlockStateModelGenerator;
+import net.minecraft.data.client.BlockStateSupplier;
 import net.minecraft.data.client.BlockStateVariant;
 import net.minecraft.data.client.ItemModelGenerator;
 import net.minecraft.data.client.ModelIds;
@@ -73,6 +74,7 @@ public class ModModelProvider extends FabricModelProvider {
                 ModBlocks.GOMOKU_BOARD,
                 BlockStateVariant.create().put(VariantSettings.MODEL, gomokuModelId)
         ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
+        generateInvisiblePlaceholderModel(ModBlocks.GOMOKU.placeholderBlock(), generator);
 
         // 围棋
         ChessGameConfig weiqiConfig = GoConfig.CONFIG;
@@ -81,6 +83,7 @@ public class ModModelProvider extends FabricModelProvider {
                 ModBlocks.GO_BOARD,
                 BlockStateVariant.create().put(VariantSettings.MODEL, weiqiModelId)
         ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
+        generateInvisiblePlaceholderModel(ModBlocks.GO.placeholderBlock(), generator);
     }
 
     @Override
@@ -102,16 +105,47 @@ public class ModModelProvider extends FabricModelProvider {
         textures.addProperty("particle", config.getBoardTopTexture().toString());
         json.add("textures", textures);
 
-        // 从 [0,0,0] 到 [16,1,16] 的立方体
+        // 从 [-16,0,-16] 到 [32,1,32] 的 3x3 薄棋盘，保持模型坐标合法。
         JsonArray elements = new JsonArray();
         JsonObject element = new JsonObject();
-        element.add("from", vec3(0, 0, 0));
-        element.add("to", vec3(16, 1, 16));
+        element.add("from", vec3(-16, 0, -16));
+        element.add("to", vec3(32, 1, 32));
         element.add("faces", getFaces());
         elements.add(element);
         json.add("elements", elements);
 
         modelCollector.accept(modelId, () -> json);
         return modelId;
+    }
+
+    private void generateInvisiblePlaceholderModel(Block block, BlockStateModelGenerator generator) {
+        Identifier modelId = ModelIds.getBlockModelId(block);
+        JsonObject json = new JsonObject();
+        json.add("elements", new JsonArray());
+        generator.modelCollector.accept(modelId, () -> json);
+        generator.blockStateCollector.accept(new BlockStateSupplier() {
+            @Override
+            public Block getBlock() {
+                return block;
+            }
+
+            @Override
+            public JsonElement get() {
+                JsonObject variants = new JsonObject();
+                for (String facing : new String[]{"north", "south", "west", "east"}) {
+                    for (int offsetX = 0; offsetX <= 2; offsetX++) {
+                        for (int offsetZ = 0; offsetZ <= 2; offsetZ++) {
+                            String key = "facing=" + facing + ",offset_x=" + offsetX + ",offset_z=" + offsetZ;
+                            JsonObject variant = new JsonObject();
+                            variant.addProperty("model", modelId.toString());
+                            variants.add(key, variant);
+                        }
+                    }
+                }
+                JsonObject root = new JsonObject();
+                root.add("variants", variants);
+                return root;
+            }
+        });
     }
 }

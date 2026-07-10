@@ -22,11 +22,13 @@ public class BoardGameRegistry {
     public static BoardGameObjects register(String name, ChessGameConfig config) {
         BlockEntityType<?>[] beHolder = new BlockEntityType<?>[1];
         ScreenHandlerType<?>[] shHolder = new ScreenHandlerType<?>[1];
+        Block[] placeholderHolder = new Block[1];
 
         // 屏幕处理器类型供应商
         Supplier<ScreenHandlerType<?>> shSupplier = () -> shHolder[0];
         // 方块实体类型供应商
         Supplier<BlockEntityType<?>> beTypeSupplier = () -> beHolder[0];
+        Supplier<Block> placeholderSupplier = () -> placeholderHolder[0];
 
         Block block = Registry.register(
                 Registries.BLOCK,
@@ -36,9 +38,22 @@ public class BoardGameRegistry {
                         .strength(2.0f)
                         .requiresTool(),
                         beTypeSupplier,
-                        shSupplier) {
+                        shSupplier,
+                        placeholderSupplier) {
                 }
         );
+
+        // 注册占位方块
+        Block placeholderBlock = Registry.register(
+                Registries.BLOCK,
+                Chess.id(name + "_placeholder"),
+                new BoardPlaceholderBlock(FabricBlockSettings.create()
+                        .mapColor(MapColor.OAK_TAN)
+                        .strength(2.0f)
+                        .requiresTool()
+                        .nonOpaque())
+        );
+        placeholderHolder[0] = placeholderBlock;
 
         // 注册方块实体类型
         FabricBlockEntityTypeBuilder<BaseBoardBlockEntity> builder = FabricBlockEntityTypeBuilder.create(
@@ -78,6 +93,6 @@ public class BoardGameRegistry {
         );
         shHolder[0] = screenHandlerType;
 
-        return new BoardGameObjects(block, item, blockEntityType, screenHandlerType);
+        return new BoardGameObjects(block, placeholderBlock, item, blockEntityType, screenHandlerType);
     }
 }

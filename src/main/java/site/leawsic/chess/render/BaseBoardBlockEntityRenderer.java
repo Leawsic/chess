@@ -28,8 +28,10 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
         // 升高棋子，确保不被棋盘模型遮挡
         float yBase = 0.05f;
         float margin = 0.08f;
-        float spacingX = (1.0f - 2 * margin) / (config.getCols() - 1);
-        float spacingZ = (1.0f - 2 * margin) / (config.getRows() - 1);
+        float boardSize = 3.0f; // 3x3 格占地
+        float boardStart = -1.0f;
+        float spacingX = (boardSize - 2 * margin) / (config.getCols() - 1);
+        float spacingZ = (boardSize - 2 * margin) / (config.getRows() - 1);
         float pieceSize = Math.min(spacingX, spacingZ) * 0.7f;
         float thickness = 1 / 64f;
 
@@ -45,8 +47,8 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
                 // 使用双面渲染层，确保从上方和下方都能看到
                 VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(fullTex));
 
-                float xCenter = margin + col * spacingX;
-                float zCenter = margin + row * spacingZ;
+                float xCenter = boardStart + margin + col * spacingX;
+                float zCenter = boardStart + margin + row * spacingZ;
                 float minX = xCenter - pieceSize / 2;
                 float maxX = xCenter + pieceSize / 2;
                 float minZ = zCenter - pieceSize / 2;
@@ -69,5 +71,10 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
             }
         }
         matrices.pop();
+    }
+
+    @Override
+    public boolean rendersOutsideBoundingBox(BaseBoardBlockEntity blockEntity) {
+        return true;
     }
 }

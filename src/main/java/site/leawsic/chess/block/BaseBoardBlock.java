@@ -30,17 +30,36 @@ import java.util.function.Supplier;
 
 public abstract class BaseBoardBlock extends BlockWithEntity {
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
-    protected static final VoxelShape SHAPE = Block.createCuboidShape(0.0, 0.0, 0.0, 16.0, 1.0, 16.0);
+    protected static final VoxelShape SHAPE = Block.createCuboidShape(-16.0, 0.0, -16.0, 32.0, 1.0, 32.0);
     private final Supplier<BlockEntityType<?>> blockEntityTypeSupplier;
     private final Supplier<ScreenHandlerType<?>> screenHandlerTypeSupplier;
+    private final Supplier<Block> placeholderSupplier;
 
     protected BaseBoardBlock(Settings settings,
                              Supplier<BlockEntityType<?>> blockEntityTypeSupplier,
-                             Supplier<ScreenHandlerType<?>> screenHandlerTypeSupplier) {
+                             Supplier<ScreenHandlerType<?>> screenHandlerTypeSupplier,
+                             Supplier<Block> placeholderSupplier) {
         super(settings);
         this.blockEntityTypeSupplier = blockEntityTypeSupplier;
         this.screenHandlerTypeSupplier = screenHandlerTypeSupplier;
+        this.placeholderSupplier = placeholderSupplier;
         setDefaultState(getDefaultState().with(FACING, Direction.NORTH));
+    }
+
+    protected BlockState getPlaceholderState(BlockState mainState, BlockPos offset) {
+        Block placeholder = placeholderSupplier.get();
+        if (placeholder instanceof BoardPlaceholderBlock) {
+            return placeholder.getDefaultState()
+                    .with(BoardPlaceholderBlock.FACING, mainState.get(FACING))
+                    .with(BoardPlaceholderBlock.OFFSET_X, offset.getX() + 1)
+                    .with(BoardPlaceholderBlock.OFFSET_Z, offset.getZ() + 1);
+        }
+        return Blocks.AIR.getDefaultState();
+    }
+
+    protected Block getPlaceholderBlock() {
+        Block placeholder = placeholderSupplier.get();
+        return placeholder != null ? placeholder : Blocks.AIR;
     }
 
     @Override
@@ -50,7 +69,18 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
+        if (!BoardMultiblock.canPlace(ctx.getWorld(), ctx.getBlockPos())) {
+            return null;
+        }
         return getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing());
+    }
+
+    @Override
+    public void onPlaced(World world, BlockPos pos, BlockState state, net.minecraft.entity.LivingEntity placer, net.minecraft.item.ItemStack itemStack) {
+        super.onPlaced(world, pos, state, placer, itemStack);
+        if (!world.isClient) {
+            BoardMultiblock.placePlaceholders(world, pos, offset -> getPlaceholderState(state, offset));
+        }
     }
 
     @Override
@@ -71,6 +101,14 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         return SHAPE;
+    }
+
+    @Override
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        if (!world.isClient) {
+            BoardMultiblock.removePlaceholders(world, pos, getPlaceholderBlock());
+        }
+        super.onBreak(world, pos, state, player);
     }
 
     @Override
