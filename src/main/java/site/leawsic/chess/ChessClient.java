@@ -8,6 +8,8 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import site.leawsic.chess.block.ModBlocks;
 import site.leawsic.chess.render.BaseBoardBlockEntityRenderer;
 import site.leawsic.chess.screen.BaseBoardScreen;
+import site.leawsic.chess.screen.XiangqiScreen;
+import site.leawsic.chess.render.XiangqiBoardBlockEntityRenderer;
 
 public class ChessClient implements ClientModInitializer {
     /**
@@ -16,9 +18,12 @@ public class ChessClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         BlockEntityRendererFactories.register(ModBlocks.GOMOKU_BOARD_BLOCK_ENTITY, BaseBoardBlockEntityRenderer::new);
+        BlockEntityRendererFactories.register(ModBlocks.XIANGQI_BOARD_BLOCK_ENTITY, XiangqiBoardBlockEntityRenderer::new);
 
         HandledScreens.register(ModBlocks.GOMOKU_BOARD_SCREEN_HANDLER, BaseBoardScreen::new);
+        HandledScreens.register(ModBlocks.XIANGQI_BOARD_SCREEN_HANDLER, XiangqiScreen::new);
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.GOMOKU_BOARD, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.XIANGQI_BOARD, RenderLayer.getCutout());
     }
 }

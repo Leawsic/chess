@@ -16,6 +16,8 @@ public class ChessNetwork {
     public static final Identifier LEAVE_GAME = Chess.id("leave_game");
     public static final Identifier SET_PIECE_TYPES = Chess.id("set_piece_types");
     public static final Identifier SET_GAME_MODE = Chess.id("set_game_mode");
+    public static final Identifier XIANGQI_MOVE = Chess.id("xiangqi_move");
+    public static final Identifier XIANGQI_RESET = Chess.id("xiangqi_reset");
 
     public static void registerServerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(PLACE_PIECE, (server, player, handler, buf, responseSender) -> {
@@ -100,6 +102,15 @@ public class ChessNetwork {
                     boardEntity.setGameMode(mode, player.getUuid());
                 }
             });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(XIANGQI_MOVE, (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            int fromX = buf.readByte(), fromY = buf.readByte(), toX = buf.readByte(), toY = buf.readByte();
+            server.execute(() -> { if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) board.tryMove(fromX, fromY, toX, toY, player.getUuid()); });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(XIANGQI_RESET, (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            server.execute(() -> { if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) board.resetBoard(player.getUuid()); });
         });
     }
 }

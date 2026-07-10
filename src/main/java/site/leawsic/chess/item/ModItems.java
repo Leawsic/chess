@@ -5,8 +5,10 @@ import site.leawsic.chess.block.ModBlocks;
 
 public class ModItems {
     public static Item GOMOKU_BOARD;
+    public static Item XIANGQI_BOARD;
 
     public static void register() {
         GOMOKU_BOARD = ModBlocks.GOMOKU.item();
+        XIANGQI_BOARD = ModBlocks.XIANGQI_BOARD_ITEM;
     }
 }

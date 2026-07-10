@@ -74,11 +74,19 @@ public class ModModelProvider extends FabricModelProvider {
                 BlockStateVariant.create().put(VariantSettings.MODEL, gomokuModelId)
         ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
         generateInvisiblePlaceholderModel(ModBlocks.GOMOKU.placeholderBlock(), generator);
+
+        Identifier xiangqiModelId = generateXiangqiBoardModel(ModBlocks.XIANGQI_BOARD, generator.modelCollector);
+        generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
+                ModBlocks.XIANGQI_BOARD,
+                BlockStateVariant.create().put(VariantSettings.MODEL, xiangqiModelId)
+        ));
+        generateInvisiblePlaceholderModel(ModBlocks.XIANGQI_PLACEHOLDER, generator);
     }
 
     @Override
     public void generateItemModels(ItemModelGenerator generator) {
         generator.register(ModBlocks.GOMOKU.item(), Models.GENERATED);
+        generator.register(ModBlocks.XIANGQI_BOARD_ITEM, Models.GENERATED);
     }
 
     private Identifier generateThinBoardModel(Block block, ChessGameConfig config,
@@ -103,6 +111,26 @@ public class ModModelProvider extends FabricModelProvider {
         elements.add(element);
         json.add("elements", elements);
 
+        modelCollector.accept(modelId, () -> json);
+        return modelId;
+    }
+
+    private Identifier generateXiangqiBoardModel(Block block, BiConsumer<Identifier, Supplier<JsonElement>> modelCollector) {
+        Identifier modelId = ModelIds.getBlockModelId(block).withSuffixedPath("_thin");
+        JsonObject json = new JsonObject();
+        JsonObject textures = new JsonObject();
+        textures.addProperty("top", "chess:block/xq_board_top");
+        textures.addProperty("bottom", "chess:block/go_board_bottom");
+        textures.addProperty("side", "minecraft:block/birch_planks");
+        textures.addProperty("particle", "chess:block/xq_board_top");
+        json.add("textures", textures);
+        JsonObject element = new JsonObject();
+        element.add("from", vec3(-16, 0, -16));
+        element.add("to", vec3(32, 1, 32));
+        element.add("faces", getFaces());
+        JsonArray elements = new JsonArray();
+        elements.add(element);
+        json.add("elements", elements);
         modelCollector.accept(modelId, () -> json);
         return modelId;
     }

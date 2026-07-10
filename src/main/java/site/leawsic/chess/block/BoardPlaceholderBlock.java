@@ -60,6 +60,9 @@ public class BoardPlaceholderBlock extends Block {
         if (originState.getBlock() instanceof BaseBoardBlock boardBlock) {
             return boardBlock.onUse(originState, world, origin, player, hand, hit);
         }
+        if (originState.getBlock() instanceof XiangqiBoardBlock boardBlock) {
+            return boardBlock.onUse(originState, world, origin, player, hand, hit);
+        }
         return ActionResult.PASS;
     }
 
@@ -69,6 +72,9 @@ public class BoardPlaceholderBlock extends Block {
             BlockPos origin = getOrigin(state, pos);
             BlockState originState = world.getBlockState(origin);
             if (originState.getBlock() instanceof BaseBoardBlock) {
+                world.breakBlock(origin, !player.isCreative(), player);
+                BoardMultiblock.removeAll(world, origin);
+            } else if (originState.getBlock() instanceof XiangqiBoardBlock) {
                 world.breakBlock(origin, !player.isCreative(), player);
                 BoardMultiblock.removeAll(world, origin);
             } else {

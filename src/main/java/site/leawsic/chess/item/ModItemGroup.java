@@ -17,6 +17,7 @@ public class ModItemGroup {
                     .icon(() -> new ItemStack(ModItems.GOMOKU_BOARD))
                     .entries((displayContext, entries) -> {
                         entries.add(ModItems.GOMOKU_BOARD);
+                        entries.add(ModItems.XIANGQI_BOARD);
                     })
                     .build()
     );
