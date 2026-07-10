@@ -14,13 +14,16 @@ public class ChineseProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(TranslationBuilder translationBuilder) {
-        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "五子棋盘");
-        translationBuilder.add(ModBlocks.GO_BOARD, "围棋盘");
+        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "棋盘");
+        translationBuilder.add("block.chess.go_board", "围棋盘");
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "棋类游戏");
         translationBuilder.add("gui.chess.clear", "清空");
         translationBuilder.add("gui.chess.edit_mode", "编辑模式");
         translationBuilder.add("gui.chess.game_over", "游戏结束");
         translationBuilder.add("block.chess.generic_board", "通用棋盘");
+        translationBuilder.add("gui.chess.mode.gomoku", "五子棋");
+        translationBuilder.add("gui.chess.mode.go", "围棋");
+        translationBuilder.add("gui.chess.mode.tooltip", "点击切换棋类");
         
         // 五子棋棋子翻译
         translationBuilder.add("gui.chess.piece.black", "黑棋");

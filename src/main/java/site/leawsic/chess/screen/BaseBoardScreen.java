@@ -25,23 +25,32 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private static final int MAX_SCREEN_MARGIN = 16;
 
     private final ChessGameConfig config;
+    private final ChessGameConfig altConfig;
     private final BlockPos boardPos;
     private int boardLeft, boardTop, boardWidth, boardHeight, cellSize, scaledBoardTextureWidth, scaledBoardTextureHeight;
     private float boardScale = 1.0f;
     private ButtonWidget clearButton, editModeButton, passButton;
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
+    private ButtonWidget modeGomokuButton, modeGoButton;
     private int selectedPieceType = 1; // 默认选择第一种棋子（黑棋）
     private boolean localLeftGame = false;
 
     public BaseBoardScreen(BaseBoardScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
         this.config = handler.getConfig();
+        this.altConfig = handler.getAltConfig();
         this.boardPos = handler.getBoardPos();
         this.boardWidth = (config.getCols() - 1) * config.getBoardCellPixelSize();
         this.boardHeight = (config.getRows() - 1) * config.getBoardCellPixelSize();
         this.backgroundWidth = Math.max(MIN_BACKGROUND_WIDTH, Math.max(boardWidth, config.getBoardTextureWidth()) + 32);
         this.backgroundHeight = Math.max(MIN_BACKGROUND_HEIGHT, Math.max(boardHeight, config.getBoardTextureHeight()) + 80);
+    }
+
+    private ChessGameConfig getActiveConfig() {
+        BaseBoardBlockEntity be = getBlockEntity();
+        if (be != null) return be.getConfig();
+        return config;
     }
 
     @Override
@@ -95,6 +104,11 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         hostWhiteButton = ButtonWidget.builder(Text.translatable("gui.chess.host_white"), btn -> sendPacket(ChessNetwork.SET_PIECE_TYPES, 2, 1))
                 .dimensions(x + Math.max(110, backgroundWidth - 105), buttonY2, 95, 20).build();
 
+        modeGomokuButton = ButtonWidget.builder(Text.translatable("gui.chess.mode.gomoku"), btn -> sendPacket(ChessNetwork.SET_GAME_MODE, 0))
+                .dimensions(x + backgroundWidth - 115, y + 4, 60, 16).build();
+        modeGoButton = ButtonWidget.builder(Text.translatable("gui.chess.mode.go"), btn -> sendPacket(ChessNetwork.SET_GAME_MODE, 1))
+                .dimensions(x + backgroundWidth - 50, y + 4, 40, 16).build();
+
         addDrawableChild(clearButton);
         addDrawableChild(editModeButton);
         addDrawableChild(passButton);
@@ -102,6 +116,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         addDrawableChild(leaveButton);
         addDrawableChild(hostBlackButton);
         addDrawableChild(hostWhiteButton);
+        addDrawableChild(modeGomokuButton);
+        addDrawableChild(modeGoButton);
 
         // 初始化棋子选择按钮
         initPieceSelectButtons();
@@ -178,6 +194,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         } else if (channel.equals(ChessNetwork.SET_PIECE_TYPES) && extra.length >= 2) {
             buf.writeByte(extra[0]);
             buf.writeByte(extra[1]);
+        } else if (channel.equals(ChessNetwork.SET_GAME_MODE) && extra.length >= 1) {
+            buf.writeByte(extra[0]);
         }
         ClientPlayNetworking.send(channel, buf);
     }
@@ -449,6 +467,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             leaveButton.visible = false;
             hostBlackButton.visible = false;
             hostWhiteButton.visible = false;
+            modeGomokuButton.visible = false;
+            modeGoButton.visible = false;
             return;
         }
 
@@ -461,8 +481,15 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         editModeButton.visible = !gameOver;
         editModeButton.active = !isMultiplayer && isInGame && !gameOver;
 
-        passButton.visible = config.supportsPass() && !gameOver;
-        passButton.active = config.supportsPass() && isInGame && !gameOver && !be.isEditMode();
+        passButton.visible = getActiveConfig().supportsPass() && !gameOver;
+        passButton.active = getActiveConfig().supportsPass() && isInGame && !gameOver && !be.isEditMode();
+
+        // 游戏模式切换按钮：空棋盘且非游戏结束才允许切换
+        boolean canSwitchMode = isInGame && (!isMultiplayer || isHost) && !hasPieces && !gameOver;
+        modeGomokuButton.visible = true;
+        modeGoButton.visible = true;
+        modeGomokuButton.active = canSwitchMode && be.getGameMode() != 0;
+        modeGoButton.active = canSwitchMode && be.getGameMode() != 1;
 
         if (isMultiplayer) {
             clearButton.active = isHost && gameOver;

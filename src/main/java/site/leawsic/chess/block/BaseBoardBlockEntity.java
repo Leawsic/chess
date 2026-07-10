@@ -18,7 +18,10 @@ import java.util.List;
 import java.util.UUID;
 
 public class BaseBoardBlockEntity extends BlockEntity {
-    private final ChessGameConfig config;
+    private ChessGameConfig config;
+    private final ChessGameConfig primaryConfig;
+    private final ChessGameConfig altConfig;
+    private int gameMode = 0; // 0=primary, 1=alt
     private final List<Move> moveHistory = new ArrayList<>();
     private int[][] board;
     private int currentPlayer;
@@ -38,9 +41,12 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private int hostPieceType; // 房主的棋子类型
     private int guestPieceType; // 客人的棋子类型
 
-    public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig config) {
+    public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         super(type, pos, state);
-        this.config = config;
+        this.primaryConfig = primaryConfig;
+        this.altConfig = altConfig;
+        this.config = primaryConfig;
+        this.gameMode = 0;
         this.board = new int[config.getRows()][config.getCols()];
         this.currentPlayer = config.getInitialPlayer();
         this.gameOver = false;
@@ -58,8 +64,44 @@ public class BaseBoardBlockEntity extends BlockEntity {
         this.guestPieceType = 2;
     }
 
+    public int getGameMode() {
+        return gameMode;
+    }
+
+    public boolean setGameMode(int mode, UUID playerUuid) {
+        if (mode != 0 && mode != 1) return false;
+        // 多人模式下房主决定；单人模式房主决定
+        if (hostPlayer != null && !isHost(playerUuid)) return false;
+        // 已有棋子或对局结束时不允许切换
+        if (hasAnyPieces() || gameOver) return false;
+        if (mode == gameMode) return false;
+        gameMode = mode;
+        config = (mode == 0) ? primaryConfig : altConfig;
+        resetBoard();
+        markDirtyAndSync();
+        return true;
+    }
+
+    private boolean hasAnyPieces() {
+        if (board == null) return false;
+        for (int[] row : board) {
+            for (int v : row) {
+                if (v != config.getEmptyValue()) return true;
+            }
+        }
+        return false;
+    }
+
     public ChessGameConfig getConfig() {
         return config;
+    }
+
+    public ChessGameConfig getAltConfig() {
+        return altConfig;
+    }
+
+    public ChessGameConfig getPrimaryConfig() {
+        return primaryConfig;
     }
 
     public int[][] getBoard() {
@@ -414,6 +456,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         nbt.putBoolean("IsMultiplayer", isMultiplayer);
         nbt.putInt("HostPieceType", hostPieceType);
         nbt.putInt("GuestPieceType", guestPieceType);
+        nbt.putInt("GameMode", gameMode);
     }
 
     @Override
@@ -449,6 +492,16 @@ public class BaseBoardBlockEntity extends BlockEntity {
         isMultiplayer = nbt.getBoolean("IsMultiplayer");
         hostPieceType = nbt.contains("HostPieceType") ? nbt.getInt("HostPieceType") : 1;
         guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : 2;
+        if (nbt.contains("GameMode")) {
+            int savedMode = nbt.getInt("GameMode");
+            if (savedMode == 1) {
+                gameMode = 1;
+                config = altConfig;
+            } else {
+                gameMode = 0;
+                config = primaryConfig;
+            }
+        }
     }
 
     @Nullable

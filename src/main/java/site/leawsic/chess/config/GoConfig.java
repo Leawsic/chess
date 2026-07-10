@@ -21,7 +21,7 @@ public class GoConfig {
                     Chess.id("block/piece_black"),
                     Chess.id("block/piece_white")
             )
-            .boardTopTexture(Chess.id("block/go_board_top"))
+            .boardTopTexture(Chess.id("block/gomoku_board_top"))
             .boardBottomTexture(Chess.id("block/go_board_bottom"))
             .boardSideTexture(new Identifier("minecraft","block/birch_planks"))
             .translationKey("block.chess.go_board")
@@ -32,9 +32,9 @@ public class GoConfig {
             ))
             .boardTextureWidth(256)
             .boardTextureHeight(256)
-            .boardLeftU(14)
-            .boardTopV(14)
-            .boardCellPixelSize(13)
+            .boardLeftU(19)
+            .boardTopV(19)
+            .boardCellPixelSize(12)
             .pieceTextureSize(12)
             .placeRule((entity, move) -> {
                 int[][] board = entity.getBoard();

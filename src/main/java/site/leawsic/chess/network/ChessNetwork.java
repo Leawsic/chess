@@ -15,6 +15,7 @@ public class ChessNetwork {
     public static final Identifier JOIN_GAME = Chess.id("join_game");
     public static final Identifier LEAVE_GAME = Chess.id("leave_game");
     public static final Identifier SET_PIECE_TYPES = Chess.id("set_piece_types");
+    public static final Identifier SET_GAME_MODE = Chess.id("set_game_mode");
 
     public static void registerServerReceivers() {
         ServerPlayNetworking.registerGlobalReceiver(PLACE_PIECE, (server, player, handler, buf, responseSender) -> {
@@ -86,6 +87,17 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.setPieceTypes(hostType, guestType, player.getUuid());
+                }
+            });
+        });
+
+        // 切换游戏模式（五子棋 / 围棋）
+        ServerPlayNetworking.registerGlobalReceiver(SET_GAME_MODE, (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            int mode = buf.readByte();
+            server.execute(() -> {
+                if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
+                    boardEntity.setGameMode(mode, player.getUuid());
                 }
             });
         });

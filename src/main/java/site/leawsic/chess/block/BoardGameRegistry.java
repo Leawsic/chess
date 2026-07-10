@@ -19,7 +19,7 @@ import site.leawsic.chess.screen.BaseBoardScreenHandler;
 import java.util.function.Supplier;
 
 public class BoardGameRegistry {
-    public static BoardGameObjects register(String name, ChessGameConfig config) {
+    public static BoardGameObjects register(String name, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         BlockEntityType<?>[] beHolder = new BlockEntityType<?>[1];
         ScreenHandlerType<?>[] shHolder = new ScreenHandlerType<?>[1];
         Block[] placeholderHolder = new Block[1];
@@ -57,7 +57,7 @@ public class BoardGameRegistry {
 
         // 注册方块实体类型
         FabricBlockEntityTypeBuilder<BaseBoardBlockEntity> builder = FabricBlockEntityTypeBuilder.create(
-                (pos, state) -> new BaseBoardBlockEntity(null, pos, state, config) {
+                (pos, state) -> new BaseBoardBlockEntity(null, pos, state, primaryConfig, altConfig) {
                     @Override
                     public BlockEntityType<?> getType() {
                         return beHolder[0];
@@ -87,7 +87,7 @@ public class BoardGameRegistry {
                         (syncId, inv, buf) -> {
                             BlockPos pos = buf.readBlockPos();
                             boolean openingPlayerInGame = buf.readBoolean();
-                            return new BaseBoardScreenHandler(shSupplier.get(), syncId, inv, pos, config, openingPlayerInGame);
+                            return new BaseBoardScreenHandler(shSupplier.get(), syncId, inv, pos, primaryConfig, altConfig, openingPlayerInGame);
                         }
                 )
         );

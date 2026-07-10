@@ -15,12 +15,15 @@ public class EnglishProvider extends FabricLanguageProvider {
     @Override
     public void generateTranslations(TranslationBuilder translationBuilder) {
         translationBuilder.add(ModBlocks.GOMOKU_BOARD, "Gomoku Board");
-        translationBuilder.add(ModBlocks.GO_BOARD, "Go Board");
+        translationBuilder.add("block.chess.go_board", "Go Board");
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "Chess Game");
         translationBuilder.add("gui.chess.clear", "Clear");
         translationBuilder.add("gui.chess.edit_mode", "Edit Mode");
         translationBuilder.add("gui.chess.game_over", "Game Over");
         translationBuilder.add("block.chess.generic_board","Generic Board");
+        translationBuilder.add("gui.chess.mode.gomoku", "Gomoku");
+        translationBuilder.add("gui.chess.mode.go", "Go");
+        translationBuilder.add("gui.chess.mode.tooltip", "Click to switch game mode");
         
         // 五子棋棋子翻译
         translationBuilder.add("gui.chess.piece.black", "Black");

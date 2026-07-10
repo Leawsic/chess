@@ -17,7 +17,6 @@ import net.minecraft.data.client.VariantsBlockStateSupplier;
 import net.minecraft.util.Identifier;
 import site.leawsic.chess.block.ModBlocks;
 import site.leawsic.chess.config.ChessGameConfig;
-import site.leawsic.chess.config.GoConfig;
 import site.leawsic.chess.config.GomokuConfig;
 
 import java.util.function.BiConsumer;
@@ -67,7 +66,7 @@ public class ModModelProvider extends FabricModelProvider {
 
     @Override
     public void generateBlockStateModels(BlockStateModelGenerator generator) {
-        // 五子棋
+        // 五子棋 + 围棋（共用同一棋盘，GUI 切换模式）
         ChessGameConfig gomokuConfig = GomokuConfig.CONFIG;
         Identifier gomokuModelId = generateThinBoardModel(ModBlocks.GOMOKU_BOARD, gomokuConfig, generator.modelCollector);
         generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
@@ -75,21 +74,11 @@ public class ModModelProvider extends FabricModelProvider {
                 BlockStateVariant.create().put(VariantSettings.MODEL, gomokuModelId)
         ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
         generateInvisiblePlaceholderModel(ModBlocks.GOMOKU.placeholderBlock(), generator);
-
-        // 围棋
-        ChessGameConfig weiqiConfig = GoConfig.CONFIG;
-        Identifier weiqiModelId = generateThinBoardModel(ModBlocks.GO_BOARD, weiqiConfig, generator.modelCollector);
-        generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
-                ModBlocks.GO_BOARD,
-                BlockStateVariant.create().put(VariantSettings.MODEL, weiqiModelId)
-        ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
-        generateInvisiblePlaceholderModel(ModBlocks.GO.placeholderBlock(), generator);
     }
 
     @Override
     public void generateItemModels(ItemModelGenerator generator) {
         generator.register(ModBlocks.GOMOKU.item(), Models.GENERATED);
-        generator.register(ModBlocks.GO.item(), Models.GENERATED);
     }
 
     private Identifier generateThinBoardModel(Block block, ChessGameConfig config,

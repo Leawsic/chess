@@ -13,25 +13,31 @@ public class BaseBoardScreenHandler extends ScreenHandler {
     private final ChessGameConfig config;
     private final BlockPos boardPos;
     private final boolean openingPlayerInGame;
+    private final ChessGameConfig altConfig;
 
     public BaseBoardScreenHandler(ScreenHandlerType<?> type, int syncId,
                                    PlayerInventory playerInventory,
                                    BlockPos boardPos, ChessGameConfig config) {
-        this(type, syncId, playerInventory, boardPos, config, false);
+        this(type, syncId, playerInventory, boardPos, config, config, false);
     }
 
     public BaseBoardScreenHandler(ScreenHandlerType<?> type, int syncId,
-                                  PlayerInventory playerInventory,
-                                  BlockPos boardPos, ChessGameConfig config,
-                                  boolean openingPlayerInGame) {
+                                   PlayerInventory playerInventory,
+                                   BlockPos boardPos, ChessGameConfig config, ChessGameConfig altConfig,
+                                   boolean openingPlayerInGame) {
         super(type, syncId);
         this.boardPos = boardPos;
         this.config = config;
+        this.altConfig = altConfig;
         this.openingPlayerInGame = openingPlayerInGame;
     }
 
     public ChessGameConfig getConfig() {
         return config;
+    }
+
+    public ChessGameConfig getAltConfig() {
+        return altConfig;
     }
 
     public BlockPos getBoardPos() {

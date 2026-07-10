@@ -134,7 +134,7 @@ public abstract class BaseBoardBlock extends BlockWithEntity {
                     BlockEntity be = world.getBlockEntity(pos);
                     if (be instanceof BaseBoardBlockEntity base) {
                         return new BaseBoardScreenHandler(screenHandlerTypeSupplier.get(), syncId, inv, pos,
-                                base.getConfig(), base.isInGame(player.getUuid()));
+                                base.getConfig(), base.getAltConfig(), base.isInGame(player.getUuid()));
                     }
                     return null;
                 }
