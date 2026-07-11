@@ -6,6 +6,8 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
 import site.leawsic.chess.Chess;
@@ -24,6 +26,7 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
         if (board == null) return;
 
         matrices.push();
+        applyBoardRotation(matrices, entity.getCachedState().get(site.leawsic.chess.block.BaseBoardBlock.FACING));
 
         // 升高棋子，确保不被棋盘模型遮挡
         float yBase = 0.05f;
@@ -75,6 +78,20 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
             }
         }
         matrices.pop();
+    }
+
+    private static void applyBoardRotation(MatrixStack matrices, Direction facing) {
+        float degrees = switch (facing) {
+            case EAST -> 270.0f;
+            case SOUTH -> 180.0f;
+            case WEST -> 90.0f;
+            default -> 0.0f;
+        };
+        if (degrees != 0.0f) {
+            matrices.translate(0.5f, 0.0f, 0.5f);
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(degrees));
+            matrices.translate(-0.5f, 0.0f, -0.5f);
+        }
     }
 
     @Override

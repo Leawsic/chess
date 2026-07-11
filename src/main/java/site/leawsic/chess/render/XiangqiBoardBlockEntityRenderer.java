@@ -6,6 +6,8 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
 import site.leawsic.chess.Chess;
@@ -21,6 +23,7 @@ public class XiangqiBoardBlockEntityRenderer implements BlockEntityRenderer<Xian
 
     @Override public void render(XiangqiBoardBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider consumers, int light, int overlay) {
         matrices.push();
+        applyBoardRotation(matrices, entity.getCachedState().get(site.leawsic.chess.block.XiangqiBoardBlock.FACING));
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         int[][] board = entity.getBoard();
         for (int row = 0; row < XiangqiConfig.ROWS; row++) for (int col = 0; col < XiangqiConfig.COLS; col++) {
@@ -39,6 +42,20 @@ public class XiangqiBoardBlockEntityRenderer implements BlockEntityRenderer<Xian
             buffer.vertex(matrix, minX, y, maxZ).color(255, 255, 255, 255).texture(0, 1).overlay(overlay).light(light).normal(0, 1, 0).next();
         }
         matrices.pop();
+    }
+
+    private static void applyBoardRotation(MatrixStack matrices, Direction facing) {
+        float degrees = switch (facing) {
+            case EAST -> 270.0f;
+            case SOUTH -> 180.0f;
+            case WEST -> 90.0f;
+            default -> 0.0f;
+        };
+        if (degrees != 0.0f) {
+            matrices.translate(0.5f, 0.0f, 0.5f);
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(degrees));
+            matrices.translate(-0.5f, 0.0f, -0.5f);
+        }
     }
 
     @Override public boolean rendersOutsideBoundingBox(XiangqiBoardBlockEntity entity) { return true; }

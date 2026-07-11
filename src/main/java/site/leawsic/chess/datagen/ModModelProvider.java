@@ -79,7 +79,7 @@ public class ModModelProvider extends FabricModelProvider {
         generator.blockStateCollector.accept(VariantsBlockStateSupplier.create(
                 ModBlocks.XIANGQI_BOARD,
                 BlockStateVariant.create().put(VariantSettings.MODEL, xiangqiModelId)
-        ));
+        ).coordinate(BlockStateModelGenerator.createNorthDefaultHorizontalRotationStates()));
         generateInvisiblePlaceholderModel(ModBlocks.XIANGQI_PLACEHOLDER, generator);
     }
 
