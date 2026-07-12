@@ -105,7 +105,7 @@ public class GomokuConfig {
 
     private static ChessGameConfig.PlaceResult passGoTurn(site.leawsic.chess.block.BaseBoardBlockEntity entity, int player) {
         if (entity.getConsecutivePasses() < 1) return ChessGameConfig.PlaceResult.success(true);
-        Score score = score(entity.getBoard(), entity.getConfig().getRows(), entity.getConfig().getCols());
+        Score score = calculateScore(entity.getBoard(), entity.getConfig().getRows(), entity.getConfig().getCols());
         int winner = score.blackScore() > score.whiteScore() ? 1 : score.whiteScore() > score.blackScore() ? 2 : 0;
         return ChessGameConfig.PlaceResult.gameOver(winner, score.blackScore(), score.whiteScore());
     }
@@ -129,7 +129,7 @@ public class GomokuConfig {
         return copy;
     }
 
-    private static Score score(int[][] board, int rows, int cols) {
+    public static Score calculateScore(int[][] board, int rows, int cols) {
         boolean[][] visited = new boolean[rows][cols];
         double black = 0, white = 6.5;
         for (int row = 0; row < rows; row++) for (int col = 0; col < cols; col++) {
@@ -170,6 +170,6 @@ public class GomokuConfig {
         return new Territory(size, mixedBorder ? 0 : borderColor);
     }
 
-    private record Score(double blackScore, double whiteScore) {}
+    public record Score(double blackScore, double whiteScore) {}
     private record Territory(int size, int borderColor) {}
 }

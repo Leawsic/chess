@@ -44,6 +44,9 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.winner_suffix", " Wins!");
         translationBuilder.add("gui.chess.clear_hint", "Click Clear to start a new game");
         translationBuilder.add("gui.chess.pass", "Pass");
+        translationBuilder.add("gui.chess.go.finish", "Score Game");
+        translationBuilder.add("gui.chess.go.black_score", "Black: %s");
+        translationBuilder.add("gui.chess.go.white_score", "White: %s");
         translationBuilder.add("gui.chess.exit_confirm", "Press Esc again to leave the board; the game will be preserved");
         translationBuilder.add("gui.chess.draw", "Draw");
         translationBuilder.add("gui.chess.xq.red_turn", "Red's Turn");

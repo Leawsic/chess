@@ -16,6 +16,7 @@ import net.minecraft.util.math.BlockPos;
 import site.leawsic.chess.Chess;
 import site.leawsic.chess.block.BaseBoardBlockEntity;
 import site.leawsic.chess.config.ChessGameConfig;
+import site.leawsic.chess.config.GomokuConfig;
 import site.leawsic.chess.network.ChessNetwork;
 
 import java.util.UUID;
@@ -30,7 +31,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private final BlockPos boardPos;
     private int boardLeft, boardTop, boardWidth, boardHeight, cellSize, scaledBoardTextureWidth, scaledBoardTextureHeight;
     private float boardScale = 1.0f;
-    private ButtonWidget clearButton, editModeButton, passButton;
+    private ButtonWidget clearButton, editModeButton, passButton, finishGoButton;
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
     private ButtonWidget modeGomokuButton, modeGoButton;
@@ -96,6 +97,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                 .dimensions(x + 75, buttonY1, 80, 20).build();
         passButton = ButtonWidget.builder(Text.translatable("gui.chess.pass"), btn -> sendPacket(ChessNetwork.PASS_TURN))
                 .dimensions(x + 10, buttonY2, 55, 20).build();
+        finishGoButton = ButtonWidget.builder(Text.translatable("gui.chess.go.finish"), btn -> sendPacket(ChessNetwork.FINISH_GO_GAME))
+                .dimensions(x + 70, buttonY2, 70, 20).build();
 
         joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> {
             localLeftGame = false;
@@ -121,6 +124,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         addDrawableChild(clearButton);
         addDrawableChild(editModeButton);
         addDrawableChild(passButton);
+        addDrawableChild(finishGoButton);
         addDrawableChild(joinButton);
         addDrawableChild(leaveButton);
         addDrawableChild(hostBlackButton);
@@ -370,8 +374,24 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                             Text.translatable("gui.chess.piece." + pieceName).getString()).getString();
                 }
                 context.drawText(textRenderer, status, 10, 10, 0xFFFFFF, false);
+                if (be.getGameMode() == 1) drawGoScore(context, be);
             }
         }
+    }
+
+    private void drawGoScore(DrawContext context, BaseBoardBlockEntity be) {
+        GomokuConfig.Score score = GomokuConfig.calculateScore(be.getBoard(), be.getConfig().getRows(), be.getConfig().getCols());
+        Text black = Text.translatable("gui.chess.go.black_score", score.blackScore());
+        Text white = Text.translatable("gui.chess.go.white_score", score.whiteScore());
+        int leftSpace = boardLeft;
+        int rightSpace = width - boardLeft - scaledBoardTextureWidth;
+        int centerScreenX = leftSpace >= rightSpace
+                ? leftSpace / 2
+                : boardLeft + scaledBoardTextureWidth + rightSpace / 2;
+        int centerX = centerScreenX - x;
+        int centerY = backgroundHeight / 2;
+        context.drawCenteredTextWithShadow(textRenderer, black, centerX, centerY - 7, 0xAAAAAA);
+        context.drawCenteredTextWithShadow(textRenderer, white, centerX, centerY + 7, 0xFFFFFF);
     }
 
     /**
@@ -379,7 +399,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
      */
     private void drawGameOverScreen(DrawContext context, BaseBoardBlockEntity be) {
         // 半透明背景遮罩
-        int overlayAlpha = 180;
+        int overlayAlpha = 210;
         context.fill(0, 0, backgroundWidth, backgroundHeight, (overlayAlpha << 24));
 
         // 获取获胜者
@@ -412,7 +432,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             winnerText = winner > 0
                     ? winnerName + Text.translatable("gui.chess.winner_suffix").getString()
                     : Text.translatable("gui.chess.draw").getString();
-            winnerColor = winner == 1 ? 0x000000 : 0xFFFFFF;
+            winnerColor = 0xFFD54F;
         } else {
             // 单人模式：从配置中获取获胜棋子名称
             if (winner > 0 && winner <= config.getPlayerCount()) {
@@ -422,7 +442,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             } else {
                 winnerText = Text.translatable("gui.chess.draw").getString();
             }
-            winnerColor = winner == 1 ? 0x404040 : 0xFFFFFF;
+            winnerColor = 0xFFD54F;
         }
 
         if (be.getBlackScore() > 0 || be.getWhiteScore() > 0) {
@@ -436,18 +456,19 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         // 标题背景
         int titleWidth = textRenderer.getWidth(winnerText) + 40;
         int titleHeight = 50;
-        context.fill(centerX - titleWidth / 2, centerY - 15, centerX + titleWidth / 2, centerY + titleHeight - 15, 0x80000000);
+        context.fill(centerX - titleWidth / 2, centerY - 15, centerX + titleWidth / 2, centerY + titleHeight - 15, 0xE0000000);
+        context.drawBorder(centerX - titleWidth / 2, centerY - 15, titleWidth, titleHeight, 0xFFFFD54F);
 
         // 标题文字
         context.drawCenteredTextWithShadow(textRenderer, winnerText, centerX, centerY, winnerColor);
 
         // 副标题
         String subtitle = Text.translatable("gui.chess.game_over").getString();
-        context.drawCenteredTextWithShadow(textRenderer, subtitle, centerX, centerY + 25, 0xAAAAAA);
+        context.drawCenteredTextWithShadow(textRenderer, subtitle, centerX, centerY + 25, 0xFFFFFF);
 
         // 底部提示
         String hint = Text.translatable("gui.chess.clear_hint").getString();
-        context.drawCenteredTextWithShadow(textRenderer, hint, centerX, backgroundHeight - 60, 0x888888);
+        context.drawCenteredTextWithShadow(textRenderer, hint, centerX, backgroundHeight - 60, 0xDDDDDD);
     }
 
     private void updateMultiplayerButtons(BaseBoardBlockEntity be) {
@@ -472,6 +493,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             clearButton.visible = false;
             editModeButton.visible = false;
             passButton.visible = false;
+            finishGoButton.visible = false;
             joinButton.visible = false;
             leaveButton.visible = false;
             hostBlackButton.visible = false;
@@ -492,6 +514,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         passButton.visible = getActiveConfig().supportsPass() && !gameOver;
         passButton.active = getActiveConfig().supportsPass() && isInGame && !gameOver && !be.isEditMode();
+        finishGoButton.visible = be.getGameMode() == 1 && hasPieces && !gameOver;
+        finishGoButton.active = finishGoButton.visible && isInGame && !be.isEditMode() && (!isMultiplayer || isHost);
 
         // 游戏模式切换按钮：空棋盘且非游戏结束才允许切换
         boolean canSwitchMode = isInGame && (!isMultiplayer || isHost) && !hasPieces && !gameOver;
@@ -503,7 +527,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         if (isMultiplayer) {
             clearButton.active = isHost && gameOver;
         } else {
-            clearButton.active = isInGame && hasPieces;
+            clearButton.active = isInGame && (hasPieces || gameOver);
         }
     }
 

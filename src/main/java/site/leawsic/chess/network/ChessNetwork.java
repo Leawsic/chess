@@ -11,6 +11,7 @@ public class ChessNetwork {
     public static final Identifier CLEAR_BOARD = Chess.id("clear_board");
     public static final Identifier TOGGLE_EDIT_MODE = Chess.id("toggle_edit");
     public static final Identifier PASS_TURN = Chess.id("pass_turn");
+    public static final Identifier FINISH_GO_GAME = Chess.id("finish_go_game");
     // 联机相关网络包
     public static final Identifier JOIN_GAME = Chess.id("join_game");
     public static final Identifier LEAVE_GAME = Chess.id("leave_game");
@@ -64,6 +65,15 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.passTurn(player.getUuid());
+                }
+            });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(FINISH_GO_GAME, (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            server.execute(() -> {
+                if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
+                    boardEntity.finishGoGame(player.getUuid());
                 }
             });
         });

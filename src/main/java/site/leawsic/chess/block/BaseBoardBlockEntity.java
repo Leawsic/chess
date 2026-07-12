@@ -12,6 +12,7 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import site.leawsic.chess.config.ChessGameConfig;
 import site.leawsic.chess.config.Move;
+import site.leawsic.chess.config.GomokuConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -329,7 +330,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     }
 
     public boolean passTurn(UUID playerUuid) {
-        if (!config.supportsPass() || gameOver || editMode) return false;
+        if (!config.supportsPass() || gameOver || editMode || !hasAnyPieces()) return false;
 
         int player = currentPlayer;
         if (isMultiplayer) {
@@ -358,6 +359,20 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else if (result.switchPlayer()) {
             currentPlayer = nextPlayer(currentPlayer);
         }
+        markDirtyAndSync();
+        return true;
+    }
+
+    public boolean finishGoGame(UUID playerUuid) {
+        if (gameMode != 1 || gameOver || editMode || !hasAnyPieces()) return false;
+        if (isMultiplayer ? !isHost(playerUuid) : hostPlayer != null && !isHost(playerUuid)) return false;
+
+        GomokuConfig.Score score = GomokuConfig.calculateScore(board, config.getRows(), config.getCols());
+        blackScore = score.blackScore();
+        whiteScore = score.whiteScore();
+        winner = blackScore > whiteScore ? 1 : whiteScore > blackScore ? 2 : 0;
+        gameOver = true;
+        editMode = false;
         markDirtyAndSync();
         return true;
     }

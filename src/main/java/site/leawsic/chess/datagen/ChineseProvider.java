@@ -44,6 +44,9 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.winner_suffix", "获胜！");
         translationBuilder.add("gui.chess.clear_hint", "点击 清空 开始新游戏");
         translationBuilder.add("gui.chess.pass", "停一手");
+        translationBuilder.add("gui.chess.go.finish", "结算目数");
+        translationBuilder.add("gui.chess.go.black_score", "黑方：%s目");
+        translationBuilder.add("gui.chess.go.white_score", "白方：%s目");
         translationBuilder.add("gui.chess.exit_confirm", "再次按 Esc 退出棋盘；棋局将保留");
         translationBuilder.add("gui.chess.draw", "平局");
         translationBuilder.add("gui.chess.xq.red_turn", "红方回合");
