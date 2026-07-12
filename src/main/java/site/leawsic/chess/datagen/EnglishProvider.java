@@ -14,7 +14,7 @@ public class EnglishProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(TranslationBuilder translationBuilder) {
-        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "Gomoku Board");
+        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "Go/Gomoku Board");
         translationBuilder.add(ModBlocks.XIANGQI_BOARD, "Xiangqi Board");
         translationBuilder.add("block.chess.go_board", "Go Board");
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "Chess Game");

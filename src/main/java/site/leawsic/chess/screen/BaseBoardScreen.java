@@ -95,7 +95,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         editModeButton = ButtonWidget.builder(Text.translatable("gui.chess.edit_mode"), btn -> sendPacket(ChessNetwork.TOGGLE_EDIT_MODE))
                 .dimensions(x + 75, buttonY1, 80, 20).build();
         passButton = ButtonWidget.builder(Text.translatable("gui.chess.pass"), btn -> sendPacket(ChessNetwork.PASS_TURN))
-                .dimensions(x + 160, buttonY1, 55, 20).build();
+                .dimensions(x + 10, buttonY2, 55, 20).build();
 
         joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), btn -> {
             localLeftGame = false;

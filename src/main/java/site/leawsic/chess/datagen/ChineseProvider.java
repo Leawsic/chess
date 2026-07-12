@@ -14,7 +14,7 @@ public class ChineseProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(TranslationBuilder translationBuilder) {
-        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "棋盘");
+        translationBuilder.add(ModBlocks.GOMOKU_BOARD, "围棋/五子棋盘");
         translationBuilder.add(ModBlocks.XIANGQI_BOARD, "象棋盘");
         translationBuilder.add("block.chess.go_board", "围棋盘");
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "棋类游戏");
