@@ -74,12 +74,14 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         int captured = board[toY][toX];
         board[toY][toX] = piece;
         board[fromY][fromX] = 0;
+        if (XiangqiConfig.isInCheck(board, currentPlayer)) {
+            board[fromY][fromX] = piece;
+            board[toY][toX] = captured;
+            return "gui.chess.xq.self_check";
+        }
         if (Math.abs(captured) == XiangqiConfig.GENERAL) {
             gameOver = true;
             winner = currentPlayer;
-        } else if (XiangqiConfig.isInCheck(board, currentPlayer)) {
-            gameOver = true;
-            winner = -currentPlayer;
         } else {
             currentPlayer = -currentPlayer;
             if (XiangqiConfig.isInCheck(board, currentPlayer) && !XiangqiConfig.hasLegalResponse(board, currentPlayer)) {
