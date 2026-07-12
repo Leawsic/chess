@@ -34,12 +34,9 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
         float boardStart = -1.0f;
         float texW = config.getBoardTextureWidth();
         float texH = config.getBoardTextureHeight();
-        float cellPx = config.getBoardCellPixelSize();
-        float boardLeftU = config.getBoardLeftU();
-        float boardTopV = config.getBoardTopV();
-        // GUI 中棋子位于纹理像素 (boardLeftU + col*cellPx, boardTopV + row*cellPx)
+        // GUI 和世界渲染共用配置中的棋子中心与显示尺寸。
         // 3D 模型将整张纹理 (0..texW, 0..texH) 映射到方块坐标 (boardStart..boardStart+boardSize)
-        float pieceSize = (cellPx / texW) * boardSize * 0.9f;
+        float pieceSize = (config.getPieceDrawSize() / texW) * boardSize;
         float thickness = 1 / 64f;
 
         for (int row = 0; row < config.getRows(); row++) {
@@ -54,8 +51,8 @@ public class BaseBoardBlockEntityRenderer implements BlockEntityRenderer<BaseBoa
                 // 使用双面渲染层，确保从上方和下方都能看到
                 VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getEntityTranslucent(fullTex));
 
-                float xCenter = boardStart + ((boardLeftU + col * cellPx) / texW) * boardSize;
-                float zCenter = boardStart + ((boardTopV + row * cellPx) / texH) * boardSize;
+                float xCenter = boardStart + (config.getPieceCenterU(col) / texW) * boardSize;
+                float zCenter = boardStart + (config.getPieceCenterV(row) / texH) * boardSize;
                 float minX = xCenter - pieceSize / 2;
                 float maxX = xCenter + pieceSize / 2;
                 float minZ = zCenter - pieceSize / 2;

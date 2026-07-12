@@ -51,8 +51,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         this.config = handler.getConfig();
         this.altConfig = handler.getAltConfig();
         this.boardPos = handler.getBoardPos();
-        this.boardWidth = (config.getCols() - 1) * config.getBoardCellPixelSize();
-        this.boardHeight = (config.getRows() - 1) * config.getBoardCellPixelSize();
+        this.boardWidth = (int) ((config.getCols() - 1) * config.getBoardCellPixelSize());
+        this.boardHeight = (int) ((config.getRows() - 1) * config.getBoardCellPixelSize());
         this.backgroundWidth = Math.max(MIN_BACKGROUND_WIDTH, Math.max(boardWidth, config.getBoardTextureWidth()) + 32);
         this.backgroundHeight = Math.max(MIN_BACKGROUND_HEIGHT, Math.max(boardHeight, config.getBoardTextureHeight()) + 80);
     }
@@ -217,8 +217,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         float logicalMouseX = (float) ((mouseX - boardLeft) / boardScale);
         float logicalMouseY = (float) ((mouseY - boardTop) / boardScale);
-        int logicalBoardWidth = (config.getCols() - 1) * config.getBoardCellPixelSize();
-        int logicalBoardHeight = (config.getRows() - 1) * config.getBoardCellPixelSize();
+        int logicalBoardWidth = (int) ((config.getCols() - 1) * config.getBoardCellPixelSize());
+        int logicalBoardHeight = (int) ((config.getRows() - 1) * config.getBoardCellPixelSize());
         if (logicalMouseX >= config.getBoardLeftU() - 4 && logicalMouseX <= config.getBoardLeftU() + logicalBoardWidth + 4 &&
                 logicalMouseY >= config.getBoardTopV() - 4 && logicalMouseY <= config.getBoardTopV() + logicalBoardHeight + 4) {
             int col = Math.round((logicalMouseX - config.getBoardLeftU()) / config.getBoardCellPixelSize());
@@ -288,23 +288,25 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                     if (piece == config.getEmptyValue()) continue;
 
                     Identifier pieceTex = Chess.id("textures/" + config.getPieceTexture(piece).getPath() + ".png");
-                    int drawSize = config.getBoardCellPixelSize();
-                    int centerX = config.getBoardLeftU() + col * config.getBoardCellPixelSize();
-                    int centerY = config.getBoardTopV() + row * config.getBoardCellPixelSize();
-                    int drawX = centerX - drawSize / 2;
-                    int drawY = centerY - drawSize / 2;
+                    int textureSize = config.getPieceTextureSize();
+                    float drawSize = config.getPieceDrawSize();
+                    float drawX = config.getPieceCenterU(col) - drawSize / 2.0f;
+                    float drawY = config.getPieceCenterV(row) - drawSize / 2.0f;
 
                     RenderSystem.setShader(GameRenderer::getPositionTexProgram);
                     RenderSystem.setShaderTexture(0, pieceTex);
                     context.getMatrices().push();
                     context.getMatrices().translate(boardLeft, boardTop, 0);
                     context.getMatrices().scale(boardScale, boardScale, 1.0f);
+                    context.getMatrices().translate(drawX, drawY, 0);
+                    float pieceScale = drawSize / textureSize;
+                    context.getMatrices().scale(pieceScale, pieceScale, 1.0f);
                     context.drawTexture(
                             pieceTex,
-                            drawX, drawY,
                             0, 0,
-                            drawSize, drawSize,
-                            config.getPieceTextureSize(), config.getPieceTextureSize()
+                            0, 0,
+                            textureSize, textureSize,
+                            textureSize, textureSize
                     );
                     context.getMatrices().pop();
                 }

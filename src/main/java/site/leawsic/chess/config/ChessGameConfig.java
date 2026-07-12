@@ -26,8 +26,11 @@ public class ChessGameConfig {
     private final int boardTextureHeight;  // 纹理总高度
     private final int boardLeftU;          // 棋盘区域在纹理中的左边界
     private final int boardTopV;           // 棋盘区域在纹理中的上边界
-    private final int boardCellPixelSize;
+    private final float boardCellPixelSize;
     private final int pieceTextureSize;
+    private final int pieceDrawSize;
+    private final float pieceOffsetX;
+    private final float pieceOffsetY;
 
     private ChessGameConfig(Builder builder) {
         this.rows = builder.rows;
@@ -49,6 +52,9 @@ public class ChessGameConfig {
         this.boardTopV = builder.boardTopV;
         this.boardCellPixelSize = builder.boardCellPixelSize;
         this.pieceTextureSize = builder.pieceTextureSize;
+        this.pieceDrawSize = builder.pieceDrawSize;
+        this.pieceOffsetX = builder.pieceOffsetX;
+        this.pieceOffsetY = builder.pieceOffsetY;
     }
 
     public int getBoardTextureWidth() {
@@ -67,7 +73,7 @@ public class ChessGameConfig {
         return boardTopV;
     }
 
-    public int getBoardCellPixelSize() {
+    public float getBoardCellPixelSize() {
         return boardCellPixelSize;
     }
 
@@ -143,6 +149,18 @@ public class ChessGameConfig {
         return pieceTextureSize;
     }
 
+    public int getPieceDrawSize() {
+        return pieceDrawSize;
+    }
+
+    public float getPieceCenterU(int col) {
+        return boardLeftU + col * boardCellPixelSize + pieceOffsetX;
+    }
+
+    public float getPieceCenterV(int row) {
+        return boardTopV + row * boardCellPixelSize + pieceOffsetY;
+    }
+
     // 棋子类型定义，可扩展（如名称、颜色等），目前仅存储ID和显示名
     public record PieceType(int id, String name) {
         public static final PieceType EMPTY = new PieceType(0, "empty");
@@ -192,8 +210,11 @@ public class ChessGameConfig {
         private int boardTextureHeight = 256;  // 纹理总高度
         private int boardLeftU = 19;          // 棋盘区域在纹理中的左边界
         private int boardTopV = 19;           // 棋盘区域在纹理中的上边界
-        private int boardCellPixelSize = 12;
+        private float boardCellPixelSize = 12;
         private int pieceTextureSize = 32;
+        private int pieceDrawSize = 12;
+        private float pieceOffsetX;
+        private float pieceOffsetY;
 
         public Builder boardTextureWidth(int boardTextureWidth) {
             this.boardTextureWidth = boardTextureWidth;
@@ -215,13 +236,24 @@ public class ChessGameConfig {
             return this;
         }
 
-        public Builder boardCellPixelSize(int boardCellPixelSize) {
+        public Builder boardCellPixelSize(float boardCellPixelSize) {
             this.boardCellPixelSize = boardCellPixelSize;
             return this;
         }
 
         public Builder pieceTextureSize(int pieceTextureSize) {
             this.pieceTextureSize = pieceTextureSize;
+            return this;
+        }
+
+        public Builder pieceDrawSize(int pieceDrawSize) {
+            this.pieceDrawSize = pieceDrawSize;
+            return this;
+        }
+
+        public Builder pieceOffset(float x, float y) {
+            this.pieceOffsetX = x;
+            this.pieceOffsetY = y;
             return this;
         }
 

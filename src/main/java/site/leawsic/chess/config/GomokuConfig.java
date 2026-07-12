@@ -43,10 +43,12 @@ public class GomokuConfig {
             ))
             .boardTextureWidth(256)
             .boardTextureHeight(256)
-            .boardLeftU(18)
-            .boardTopV(20)
-            .boardCellPixelSize(12)
-            .pieceTextureSize(12);
+            .boardLeftU(19)
+            .boardTopV(19)
+            .boardCellPixelSize(12.125f)
+            .pieceTextureSize(14)
+            .pieceDrawSize(11)
+            .pieceOffset(0, 0);
     }
 
     private static ChessGameConfig.PlaceResult placeGomokuPiece(site.leawsic.chess.block.BaseBoardBlockEntity entity, Move move) {
