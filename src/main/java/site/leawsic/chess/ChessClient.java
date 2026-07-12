@@ -2,6 +2,8 @@ package site.leawsic.chess;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.text.Text;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
@@ -25,5 +27,14 @@ public class ChessClient implements ClientModInitializer {
 
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.GOMOKU_BOARD, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.XIANGQI_BOARD, RenderLayer.getCutout());
+
+        ClientPlayNetworking.registerGlobalReceiver(site.leawsic.chess.network.ChessNetwork.GUI_NOTICE,
+                (client, handler, buf, responseSender) -> {
+                    Text notice = Text.translatable(buf.readString());
+                    client.execute(() -> {
+                        if (client.currentScreen instanceof BaseBoardScreen screen) screen.showNotice(notice);
+                        else if (client.currentScreen instanceof XiangqiScreen screen) screen.showNotice(notice);
+                    });
+                });
     }
 }

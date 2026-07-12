@@ -37,6 +37,13 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private int selectedPieceType = 1; // 默认选择第一种棋子（黑棋）
     private boolean localLeftGame = false;
     private long lastEscapePress;
+    private Text notice;
+    private long noticeUntil;
+
+    public void showNotice(Text notice) {
+        this.notice = notice;
+        this.noticeUntil = System.currentTimeMillis() + 5000L;
+    }
 
     public BaseBoardScreen(BaseBoardScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -547,7 +554,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         long now = System.currentTimeMillis();
         if (now - lastEscapePress > 1500L) {
             lastEscapePress = now;
-            if (client != null && client.player != null) client.player.sendMessage(Text.translatable("gui.chess.exit_confirm"));
+            showNotice(Text.translatable("gui.chess.exit_confirm"));
             return true;
         }
         BaseBoardBlockEntity board = getBlockEntity();
@@ -563,12 +570,34 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context);
         super.render(context, mouseX, mouseY, delta);
+        drawNotice(context);
         drawMouseoverTooltip(context, mouseX, mouseY);
 
         // 每帧更新按钮状态，确保与当前游戏状态同步
         BaseBoardBlockEntity be = getBlockEntity();
         if (be != null) {
             updateMultiplayerButtons(be);
+        }
+    }
+
+    private void drawNotice(DrawContext context) {
+        long remaining = noticeUntil - System.currentTimeMillis();
+        if (notice == null || remaining <= 0) {
+            notice = null;
+            return;
+        }
+        int alpha = remaining < 1000L ? (int) (255L * remaining / 1000L) : 255;
+        if (alpha < 4) return;
+        int leftSpace = boardLeft;
+        int rightSpace = width - boardLeft - scaledBoardTextureWidth;
+        int centerX = leftSpace >= rightSpace ? leftSpace / 2 : boardLeft + scaledBoardTextureWidth + rightSpace / 2;
+        int maxWidth = Math.max(80, Math.max(leftSpace, rightSpace) - 16);
+        var lines = textRenderer.wrapLines(notice, maxWidth);
+        int top = (height - lines.size() * textRenderer.fontHeight) / 2;
+        for (int i = 0; i < lines.size(); i++) {
+            var line = lines.get(i);
+            context.drawTextWithShadow(textRenderer, line, centerX - textRenderer.getWidth(line) / 2,
+                    top + i * textRenderer.fontHeight, (alpha << 24) | 0xFFFFFF);
         }
     }
 }

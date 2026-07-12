@@ -25,6 +25,13 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
     private ButtonWidget joinButton, leaveButton, hostRedButton, hostBlackButton;
     private boolean leaveSent;
     private long lastEscapePress;
+    private Text notice;
+    private long noticeUntil;
+
+    public void showNotice(Text notice) {
+        this.notice = notice;
+        this.noticeUntil = System.currentTimeMillis() + 5000L;
+    }
 
     public XiangqiScreen(XiangqiScreenHandler handler, PlayerInventory inventory, Text title) { super(handler, inventory, title); backgroundWidth = 360; backgroundHeight = 340; }
 
@@ -149,7 +156,7 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         long now = System.currentTimeMillis();
         if (now - lastEscapePress > 1500L) {
             lastEscapePress = now;
-            if (client != null && client.player != null) client.player.sendMessage(Text.translatable("gui.chess.exit_confirm"));
+            showNotice(Text.translatable("gui.chess.exit_confirm"));
             return true;
         }
         XiangqiBoardBlockEntity board = getBoard();
@@ -169,4 +176,33 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
     private void sendReset() { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); ClientPlayNetworking.send(ChessNetwork.XIANGQI_RESET, buf); }
     private void sendSimple(Identifier channel) { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); ClientPlayNetworking.send(channel, buf); }
     private void sendPieceTypes(int hostType, int guestType) { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); buf.writeByte(hostType); buf.writeByte(guestType); ClientPlayNetworking.send(ChessNetwork.SET_PIECE_TYPES, buf); }
+
+    @Override public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackground(context);
+        super.render(context, mouseX, mouseY, delta);
+        drawNotice(context);
+        drawMouseoverTooltip(context, mouseX, mouseY);
+    }
+
+    private void drawNotice(DrawContext context) {
+        long remaining = noticeUntil - System.currentTimeMillis();
+        if (notice == null || remaining <= 0) {
+            notice = null;
+            return;
+        }
+        int alpha = remaining < 1000L ? (int) (255L * remaining / 1000L) : 255;
+        if (alpha < 4) return;
+        int boardWidth = Math.round(XiangqiConfig.BOARD_TEXTURE_SIZE * scale);
+        int leftSpace = boardLeft;
+        int rightSpace = width - boardLeft - boardWidth;
+        int centerX = leftSpace >= rightSpace ? leftSpace / 2 : boardLeft + boardWidth + rightSpace / 2;
+        int maxWidth = Math.max(80, Math.max(leftSpace, rightSpace) - 16);
+        var lines = textRenderer.wrapLines(notice, maxWidth);
+        int top = (height - lines.size() * textRenderer.fontHeight) / 2;
+        for (int i = 0; i < lines.size(); i++) {
+            var line = lines.get(i);
+            context.drawTextWithShadow(textRenderer, line, centerX - textRenderer.getWidth(line) / 2,
+                    top + i * textRenderer.fontHeight, (alpha << 24) | 0xFFFFFF);
+        }
+    }
 }
