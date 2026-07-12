@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import site.leawsic.chess.datagen.ChineseProvider;
 import site.leawsic.chess.datagen.EnglishProvider;
 import site.leawsic.chess.datagen.ModModelProvider;
+import site.leawsic.chess.datagen.ModLootTableProvider;
 
 public class ChessDataGenerator implements DataGeneratorEntrypoint {
 	@Override
@@ -14,5 +15,6 @@ public class ChessDataGenerator implements DataGeneratorEntrypoint {
         pack.addProvider(EnglishProvider::new);
         pack.addProvider(ChineseProvider::new);
         pack.addProvider(ModModelProvider::new);
+        pack.addProvider(ModLootTableProvider::new);
 	}
 }

@@ -10,7 +10,7 @@ import net.minecraft.registry.Registry;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
-import net.minecraft.block.MapColor;
+import net.minecraft.block.Blocks;
 import site.leawsic.chess.Chess;
 import site.leawsic.chess.config.GomokuConfig;
 import site.leawsic.chess.screen.BaseBoardScreenHandler;
@@ -38,10 +38,10 @@ public class ModBlocks {
         BlockEntityType<XiangqiBoardBlockEntity>[] xiangqiType = new BlockEntityType[1];
         ScreenHandlerType<?>[] xiangqiScreen = new ScreenHandlerType<?>[1];
         XIANGQI_BOARD = Registry.register(Registries.BLOCK, Chess.id("xq_board"), new XiangqiBoardBlock(
-                FabricBlockSettings.create().mapColor(MapColor.OAK_TAN).strength(2.0f).requiresTool(),
+                FabricBlockSettings.copyOf(Blocks.OAK_PLANKS),
                 () -> xiangqiType[0], () -> xiangqiScreen[0]));
         XIANGQI_PLACEHOLDER = Registry.register(Registries.BLOCK, Chess.id("xq_board_placeholder"), new BoardPlaceholderBlock(
-                FabricBlockSettings.create().mapColor(MapColor.OAK_TAN).strength(2.0f).requiresTool().nonOpaque()));
+                FabricBlockSettings.copyOf(Blocks.OAK_PLANKS).nonOpaque()));
         XIANGQI_BOARD_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Chess.id("xq_board_be"),
                 FabricBlockEntityTypeBuilder.<XiangqiBoardBlockEntity>create((pos, state) -> new XiangqiBoardBlockEntity(null, pos, state) {
                     @Override public BlockEntityType<?> getType() { return xiangqiType[0]; }

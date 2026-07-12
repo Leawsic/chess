@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.block.Block;
-import net.minecraft.block.MapColor;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -33,10 +33,7 @@ public class BoardGameRegistry {
         Block block = Registry.register(
                 Registries.BLOCK,
                 Chess.id(name),
-                new BaseBoardBlock(FabricBlockSettings.create()
-                        .mapColor(MapColor.OAK_TAN)
-                        .strength(2.0f)
-                        .requiresTool(),
+                new BaseBoardBlock(FabricBlockSettings.copyOf(Blocks.OAK_PLANKS),
                         beTypeSupplier,
                         shSupplier,
                         placeholderSupplier) {
@@ -47,10 +44,7 @@ public class BoardGameRegistry {
         Block placeholderBlock = Registry.register(
                 Registries.BLOCK,
                 Chess.id(name + "_placeholder"),
-                new BoardPlaceholderBlock(FabricBlockSettings.create()
-                        .mapColor(MapColor.OAK_TAN)
-                        .strength(2.0f)
-                        .requiresTool()
+                new BoardPlaceholderBlock(FabricBlockSettings.copyOf(Blocks.OAK_PLANKS)
                         .nonOpaque())
         );
         placeholderHolder[0] = placeholderBlock;
