@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityT
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.block.MapColor;
 import site.leawsic.chess.Chess;
-import site.leawsic.chess.config.GoConfig;
 import site.leawsic.chess.config.GomokuConfig;
 import site.leawsic.chess.screen.BaseBoardScreenHandler;
 import site.leawsic.chess.screen.XiangqiScreenHandler;
@@ -30,7 +29,7 @@ public class ModBlocks {
     public static ScreenHandlerType<XiangqiScreenHandler> XIANGQI_BOARD_SCREEN_HANDLER;
 
     public static void register() {
-        GOMOKU = BoardGameRegistry.register("gomoku_board", GomokuConfig.CONFIG, GoConfig.CONFIG);
+        GOMOKU = BoardGameRegistry.register("gomoku_board", GomokuConfig.CONFIG, GomokuConfig.GO_CONFIG);
         GOMOKU_BOARD = GOMOKU.block();
         GOMOKU_BOARD_BLOCK_ENTITY = GOMOKU.blockEntityType();
         GOMOKU_BOARD_SCREEN_HANDLER = GOMOKU.screenHandlerType();
