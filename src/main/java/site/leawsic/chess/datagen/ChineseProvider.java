@@ -66,6 +66,8 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.xq.not_your_turn", "还没轮到你的回合");
         translationBuilder.add("gui.chess.xq.own_piece", "目标位置已有己方棋子");
         translationBuilder.add("gui.chess.xq.self_check", "走子后己方将帅仍被将军，必须应将");
+        translationBuilder.add("gui.chess.xq.red_in_check", "红方被将军，必须应将！");
+        translationBuilder.add("gui.chess.xq.black_in_check", "黑方被将军，必须应将！");
         translationBuilder.add("gui.chess.xq.invalid_move", "这步棋不符合走棋规则");
         translationBuilder.add("gui.chess.xq.rule.general", "将帅只能在九宫内横向或纵向走一格，或在无阻挡时飞将");
         translationBuilder.add("gui.chess.xq.rule.advisor", "士只能在九宫内斜走一格");

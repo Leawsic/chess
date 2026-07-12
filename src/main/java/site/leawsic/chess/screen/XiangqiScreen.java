@@ -111,6 +111,9 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         XiangqiBoardBlockEntity board = getBoard();
         String status = getStatus(board);
         context.drawText(textRenderer, status, 10, 10, 0xFFFFFF, false);
+        if (board != null && !board.isGameOver() && XiangqiConfig.isInCheck(board.getBoard(), board.getCurrentPlayer())) {
+            drawCheckWarning(context, board.getCurrentPlayer());
+        }
         boolean host = board != null && client != null && client.player != null && client.player.getUuid().equals(board.getHostPlayer());
         boolean inGame = board != null && client != null && client.player != null && board.isInGame(client.player.getUuid());
         boolean gameStarted = board != null && board.isGameStarted();
@@ -121,6 +124,19 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         hostRedButton.visible = hostBlackButton.visible = board != null;
         hostRedButton.active = host;
         hostBlackButton.active = host;
+    }
+
+    private void drawCheckWarning(DrawContext context, int side) {
+        Text warning = Text.translatable(side == XiangqiConfig.RED
+                ? "gui.chess.xq.red_in_check" : "gui.chess.xq.black_in_check");
+        int textWidth = textRenderer.getWidth(warning);
+        int centerX = boardLeft - x + Math.round(XiangqiConfig.BOARD_TEXTURE_SIZE * scale) / 2;
+        int left = centerX - textWidth / 2 - 8;
+        int top = 5;
+        int pulse = (int) ((Math.sin(System.currentTimeMillis() / 180.0) + 1.0) * 24.0);
+        context.fill(left, top, left + textWidth + 16, top + 17, 0xD0_700000 | (pulse << 16));
+        context.drawBorder(left, top, textWidth + 16, 17, 0xFFFFD54F);
+        context.drawTextWithShadow(textRenderer, warning, centerX - textWidth / 2, top + 4, 0xFFFFFFFF);
     }
 
     private String getStatus(XiangqiBoardBlockEntity board) {

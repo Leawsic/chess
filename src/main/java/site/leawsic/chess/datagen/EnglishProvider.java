@@ -66,6 +66,8 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.xq.not_your_turn", "It is not your turn");
         translationBuilder.add("gui.chess.xq.own_piece", "The destination contains your own piece");
         translationBuilder.add("gui.chess.xq.self_check", "Your general would still be in check; you must respond to the check");
+        translationBuilder.add("gui.chess.xq.red_in_check", "Red is in check and must respond!");
+        translationBuilder.add("gui.chess.xq.black_in_check", "Black is in check and must respond!");
         translationBuilder.add("gui.chess.xq.invalid_move", "This move violates the rules");
         translationBuilder.add("gui.chess.xq.rule.general", "The general moves one square orthogonally inside the palace, or flies along an open file");
         translationBuilder.add("gui.chess.xq.rule.advisor", "The advisor moves one square diagonally inside the palace");
