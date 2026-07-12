@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.PacketByteBuf;
@@ -35,6 +36,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private ButtonWidget modeGomokuButton, modeGoButton;
     private int selectedPieceType = 1; // 默认选择第一种棋子（黑棋）
     private boolean localLeftGame = false;
+    private long lastEscapePress;
 
     public BaseBoardScreen(BaseBoardScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -531,13 +533,30 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
     @Override
     public boolean shouldCloseOnEsc() {
-        return !isLocalPlayerInMultiplayerGame();
+        return false;
     }
 
     @Override
     public void close() {
-        if (isLocalPlayerInMultiplayerGame()) return;
         super.close();
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode != GLFW.GLFW_KEY_ESCAPE) return super.keyPressed(keyCode, scanCode, modifiers);
+        long now = System.currentTimeMillis();
+        if (now - lastEscapePress > 1500L) {
+            lastEscapePress = now;
+            if (client != null && client.player != null) client.player.sendMessage(Text.translatable("gui.chess.exit_confirm"));
+            return true;
+        }
+        BaseBoardBlockEntity board = getBlockEntity();
+        if (board != null && client != null && client.player != null && board.isInGame(client.player.getUuid())) {
+            localLeftGame = true;
+            sendPacket(ChessNetwork.LEAVE_GAME);
+        }
+        super.close();
+        return true;
     }
 
     @Override

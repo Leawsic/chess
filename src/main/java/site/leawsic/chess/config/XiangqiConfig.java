@@ -76,6 +76,19 @@ public final class XiangqiConfig {
         };
     }
 
+    public static String moveRuleKey(int piece) {
+        return switch (Math.abs(piece)) {
+            case GENERAL -> "gui.chess.xq.rule.general";
+            case ADVISOR -> "gui.chess.xq.rule.advisor";
+            case ELEPHANT -> "gui.chess.xq.rule.elephant";
+            case HORSE -> "gui.chess.xq.rule.horse";
+            case ROOK -> "gui.chess.xq.rule.rook";
+            case CANNON -> "gui.chess.xq.rule.cannon";
+            case SOLDIER -> "gui.chess.xq.rule.soldier";
+            default -> "gui.chess.xq.invalid_move";
+        };
+    }
+
     public static boolean isInCheck(int[][] board, int side) {
         int generalX = -1, generalY = -1;
         for (int y = 0; y < ROWS; y++) for (int x = 0; x < COLS; x++) {
@@ -84,6 +97,27 @@ public final class XiangqiConfig {
         if (generalX < 0) return true;
         for (int y = 0; y < ROWS; y++) for (int x = 0; x < COLS; x++) {
             if (color(board[y][x]) == -side && isLegalMove(board, x, y, generalX, generalY)) return true;
+        }
+        return false;
+    }
+
+    public static boolean hasLegalResponse(int[][] board, int side) {
+        for (int fromY = 0; fromY < ROWS; fromY++) {
+            for (int fromX = 0; fromX < COLS; fromX++) {
+                if (color(board[fromY][fromX]) != side) continue;
+                for (int toY = 0; toY < ROWS; toY++) {
+                    for (int toX = 0; toX < COLS; toX++) {
+                        if (color(board[toY][toX]) == side || !isLegalMove(board, fromX, fromY, toX, toY)) continue;
+                        int captured = board[toY][toX];
+                        board[toY][toX] = board[fromY][fromX];
+                        board[fromY][fromX] = 0;
+                        boolean safe = !isInCheck(board, side);
+                        board[fromY][fromX] = board[toY][toX];
+                        board[toY][toX] = captured;
+                        if (safe) return true;
+                    }
+                }
+            }
         }
         return false;
     }

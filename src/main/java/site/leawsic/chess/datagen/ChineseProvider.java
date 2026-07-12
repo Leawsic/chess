@@ -44,10 +44,35 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.winner_suffix", "获胜！");
         translationBuilder.add("gui.chess.clear_hint", "点击 清空 开始新游戏");
         translationBuilder.add("gui.chess.pass", "停一手");
+        translationBuilder.add("gui.chess.exit_confirm", "再次按 Esc 退出棋盘；棋局将保留");
         translationBuilder.add("gui.chess.draw", "平局");
         translationBuilder.add("gui.chess.xq.red_turn", "红方回合");
         translationBuilder.add("gui.chess.xq.black_turn", "黑方回合");
         translationBuilder.add("gui.chess.xq.red_wins", "红方获胜！");
         translationBuilder.add("gui.chess.xq.black_wins", "黑方获胜！");
+        translationBuilder.add("gui.chess.xq.red", "红方");
+        translationBuilder.add("gui.chess.xq.black", "黑方");
+        translationBuilder.add("gui.chess.xq.multiplayer_turn", "%s（%s） 对 %s（%s） | 轮到：%s");
+        translationBuilder.add("gui.chess.xq.host_red", "房主红方");
+        translationBuilder.add("gui.chess.xq.host_black", "房主黑方");
+        translationBuilder.add("gui.chess.xq.not_player", "你不是本局玩家");
+        translationBuilder.add("gui.chess.xq.game_full", "对局已有两名玩家");
+        translationBuilder.add("gui.chess.xq.host_only", "只有房主可以设置棋色");
+        translationBuilder.add("gui.chess.xq.invalid_colors", "棋色设置无效");
+        translationBuilder.add("gui.chess.xq.game_over", "对局已结束");
+        translationBuilder.add("gui.chess.xq.not_host", "只有房主可以操作棋盘");
+        translationBuilder.add("gui.chess.xq.invalid_position", "无效的棋盘位置");
+        translationBuilder.add("gui.chess.xq.empty_position", "起点没有棋子");
+        translationBuilder.add("gui.chess.xq.not_your_turn", "还没轮到你的回合");
+        translationBuilder.add("gui.chess.xq.own_piece", "目标位置已有己方棋子");
+        translationBuilder.add("gui.chess.xq.self_check", "走子后己方将帅仍被将军，必须应将");
+        translationBuilder.add("gui.chess.xq.invalid_move", "这步棋不符合走棋规则");
+        translationBuilder.add("gui.chess.xq.rule.general", "将帅只能在九宫内横向或纵向走一格，或在无阻挡时飞将");
+        translationBuilder.add("gui.chess.xq.rule.advisor", "士只能在九宫内斜走一格");
+        translationBuilder.add("gui.chess.xq.rule.elephant", "象只能斜走两格，不能过河，且象眼不能有棋子");
+        translationBuilder.add("gui.chess.xq.rule.horse", "马走日字，且马腿不能有棋子");
+        translationBuilder.add("gui.chess.xq.rule.rook", "车只能沿横线或竖线走，路径不能有棋子");
+        translationBuilder.add("gui.chess.xq.rule.cannon", "炮只能沿横线或竖线走；不吃子时不能隔子，吃子时必须隔一个棋子");
+        translationBuilder.add("gui.chess.xq.rule.soldier", "兵卒只能向前走；过河后才能横走，不能后退");
     }
 }

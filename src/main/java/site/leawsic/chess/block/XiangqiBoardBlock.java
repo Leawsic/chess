@@ -62,7 +62,7 @@ public class XiangqiBoardBlock extends BlockWithEntity {
     @Override public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) { if (!world.isClient) BoardMultiblock.removeAll(world, pos); super.onBreak(world, pos, state, player); }
     @Override public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient && world.getBlockEntity(pos) instanceof XiangqiBoardBlockEntity board) {
-            board.setHost(player.getUuid());
+            if (board.getHostPlayer() == null) board.setHost(player.getUuid());
             player.openHandledScreen(new ExtendedScreenHandlerFactory() {
                 @Override public @Nullable ScreenHandler createMenu(int syncId, PlayerInventory inventory, PlayerEntity ignored) { return new XiangqiScreenHandler(screenSupplier.get(), syncId, inventory, pos); }
                 @Override public Text getDisplayName() { return Text.translatable("block.chess.xq_board"); }

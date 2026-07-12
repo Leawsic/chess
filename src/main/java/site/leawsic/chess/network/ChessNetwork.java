@@ -1,6 +1,7 @@
 package site.leawsic.chess.network;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import site.leawsic.chess.Chess;
@@ -67,6 +68,9 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.joinGame(player.getUuid());
+                } else if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) {
+                    String errorKey = board.joinGame(player.getUuid());
+                    if (errorKey != null) player.sendMessage(Text.translatable(errorKey));
                 }
             });
         });
@@ -77,6 +81,9 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.leaveGame(player.getUuid());
+                } else if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) {
+                    String errorKey = board.leaveGame(player.getUuid());
+                    if (errorKey != null) player.sendMessage(Text.translatable(errorKey));
                 }
             });
         });
@@ -89,6 +96,10 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.setPieceTypes(hostType, guestType, player.getUuid());
+                } else if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) {
+                    String errorKey = board.setPieceTypes(hostType == 1 ? site.leawsic.chess.config.XiangqiConfig.RED : site.leawsic.chess.config.XiangqiConfig.BLACK,
+                            guestType == 1 ? site.leawsic.chess.config.XiangqiConfig.RED : site.leawsic.chess.config.XiangqiConfig.BLACK, player.getUuid());
+                    if (errorKey != null) player.sendMessage(Text.translatable(errorKey));
                 }
             });
         });
@@ -106,7 +117,12 @@ public class ChessNetwork {
         ServerPlayNetworking.registerGlobalReceiver(XIANGQI_MOVE, (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             int fromX = buf.readByte(), fromY = buf.readByte(), toX = buf.readByte(), toY = buf.readByte();
-            server.execute(() -> { if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) board.tryMove(fromX, fromY, toX, toY, player.getUuid()); });
+            server.execute(() -> {
+                if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) {
+                    String errorKey = board.tryMove(fromX, fromY, toX, toY, player.getUuid());
+                    if (errorKey != null) player.sendMessage(Text.translatable(errorKey));
+                }
+            });
         });
         ServerPlayNetworking.registerGlobalReceiver(XIANGQI_RESET, (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();

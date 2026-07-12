@@ -11,6 +11,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
 import site.leawsic.chess.Chess;
 import site.leawsic.chess.block.XiangqiBoardBlockEntity;
 import site.leawsic.chess.network.ChessNetwork;
@@ -21,6 +22,9 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
     private float scale;
     private int selectedX = -1, selectedY = -1;
     private ButtonWidget resetButton;
+    private ButtonWidget joinButton, leaveButton, hostRedButton, hostBlackButton;
+    private boolean leaveSent;
+    private long lastEscapePress;
 
     public XiangqiScreen(XiangqiScreenHandler handler, PlayerInventory inventory, Text title) { super(handler, inventory, title); backgroundWidth = 360; backgroundHeight = 340; }
 
@@ -34,7 +38,15 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         boardLeft = x + (backgroundWidth - Math.round(XiangqiConfig.BOARD_TEXTURE_SIZE * scale)) / 2;
         boardTop = y + 24;
         resetButton = ButtonWidget.builder(Text.translatable("gui.chess.clear"), button -> sendReset()).dimensions(x + 10, y + backgroundHeight - 24, 60, 20).build();
+        joinButton = ButtonWidget.builder(Text.translatable("gui.chess.join"), button -> sendSimple(ChessNetwork.JOIN_GAME)).dimensions(x + 75, y + backgroundHeight - 24, 55, 20).build();
+        leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), button -> leaveGame()).dimensions(x + 135, y + backgroundHeight - 24, 55, 20).build();
+        hostRedButton = ButtonWidget.builder(Text.translatable("gui.chess.xq.host_red"), button -> sendPieceTypes(1, 2)).dimensions(x + backgroundWidth - 190, y + backgroundHeight - 24, 85, 20).build();
+        hostBlackButton = ButtonWidget.builder(Text.translatable("gui.chess.xq.host_black"), button -> sendPieceTypes(2, 1)).dimensions(x + backgroundWidth - 100, y + backgroundHeight - 24, 85, 20).build();
         addDrawableChild(resetButton);
+        addDrawableChild(joinButton);
+        addDrawableChild(leaveButton);
+        addDrawableChild(hostRedButton);
+        addDrawableChild(hostBlackButton);
     }
 
     @Override protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
@@ -74,7 +86,11 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
             if (board == null || client == null || client.player == null || board.isGameOver()) return true;
             int piece = board.getBoard()[row][col];
             if (selectedX < 0) {
-                if (piece != 0 && XiangqiConfig.color(piece) == board.getCurrentPlayer()) { selectedX = col; selectedY = row; }
+                if (piece != 0 && XiangqiConfig.color(piece) == board.getCurrentPlayer()
+                        && client.player != null
+                        && (!board.isGameStarted() || board.getPlayerPieceType(client.player.getUuid()) == XiangqiConfig.color(piece))) {
+                    selectedX = col; selectedY = row;
+                }
             } else {
                 sendMove(selectedX, selectedY, col, row);
                 selectedX = selectedY = -1;
@@ -86,14 +102,71 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
 
     @Override protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         XiangqiBoardBlockEntity board = getBoard();
-        String status = board == null ? "" : board.isGameOver()
-                ? Text.translatable(board.getWinner() == XiangqiConfig.RED ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString()
-                : Text.translatable(board.getCurrentPlayer() == XiangqiConfig.RED ? "gui.chess.xq.red_turn" : "gui.chess.xq.black_turn").getString();
+        String status = getStatus(board);
         context.drawText(textRenderer, status, 10, 10, 0xFFFFFF, false);
-        resetButton.active = board != null && client != null && client.player != null && client.player.getUuid().equals(board.getHostPlayer());
+        boolean host = board != null && client != null && client.player != null && client.player.getUuid().equals(board.getHostPlayer());
+        boolean inGame = board != null && client != null && client.player != null && board.isInGame(client.player.getUuid());
+        boolean gameStarted = board != null && board.isGameStarted();
+        resetButton.active = host;
+        joinButton.visible = joinButton.active = board != null && board.getHostPlayer() != null
+                && !inGame && board.getGuestPlayer() == null;
+        leaveButton.visible = leaveButton.active = inGame && gameStarted;
+        hostRedButton.visible = hostBlackButton.visible = board != null;
+        hostRedButton.active = host;
+        hostBlackButton.active = host;
+    }
+
+    private String getStatus(XiangqiBoardBlockEntity board) {
+        if (board == null) return "";
+        if (board.isGameOver()) {
+            return Text.translatable(board.getWinner() == XiangqiConfig.RED
+                    ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString();
+        }
+        if (!board.isGameStarted() || client == null || client.world == null) {
+            return Text.translatable(board.getCurrentPlayer() == XiangqiConfig.RED
+                    ? "gui.chess.xq.red_turn" : "gui.chess.xq.black_turn").getString();
+        }
+        var host = client.world.getPlayerByUuid(board.getHostPlayer());
+        var guest = client.world.getPlayerByUuid(board.getGuestPlayer());
+        String hostName = host == null ? "?" : host.getName().getString();
+        String guestName = guest == null ? "?" : guest.getName().getString();
+        String hostColor = Text.translatable(board.getHostPieceType() == XiangqiConfig.RED
+                ? "gui.chess.xq.red" : "gui.chess.xq.black").getString();
+        String guestColor = Text.translatable(board.getGuestPieceType() == XiangqiConfig.RED
+                ? "gui.chess.xq.red" : "gui.chess.xq.black").getString();
+        String turnName = board.getCurrentPlayer() == board.getHostPieceType() ? hostName : guestName;
+        return Text.translatable("gui.chess.xq.multiplayer_turn", hostName, hostColor, guestName, guestColor, turnName).getString();
+    }
+
+    @Override public void close() {
+        super.close();
+    }
+
+    @Override public boolean shouldCloseOnEsc() { return false; }
+
+    @Override public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode != GLFW.GLFW_KEY_ESCAPE) return super.keyPressed(keyCode, scanCode, modifiers);
+        long now = System.currentTimeMillis();
+        if (now - lastEscapePress > 1500L) {
+            lastEscapePress = now;
+            if (client != null && client.player != null) client.player.sendMessage(Text.translatable("gui.chess.exit_confirm"));
+            return true;
+        }
+        XiangqiBoardBlockEntity board = getBoard();
+        if (board != null && client != null && client.player != null && board.isInGame(client.player.getUuid())) leaveGame();
+        super.close();
+        return true;
+    }
+
+    private void leaveGame() {
+        if (leaveSent) return;
+        leaveSent = true;
+        sendSimple(ChessNetwork.LEAVE_GAME);
     }
 
     private XiangqiBoardBlockEntity getBoard() { return client != null && client.world != null && client.world.getBlockEntity(handler.getBoardPos()) instanceof XiangqiBoardBlockEntity board ? board : null; }
     private void sendMove(int fromX, int fromY, int toX, int toY) { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); buf.writeByte(fromX); buf.writeByte(fromY); buf.writeByte(toX); buf.writeByte(toY); ClientPlayNetworking.send(ChessNetwork.XIANGQI_MOVE, buf); }
     private void sendReset() { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); ClientPlayNetworking.send(ChessNetwork.XIANGQI_RESET, buf); }
+    private void sendSimple(Identifier channel) { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); ClientPlayNetworking.send(channel, buf); }
+    private void sendPieceTypes(int hostType, int guestType) { PacketByteBuf buf = PacketByteBufs.create(); buf.writeBlockPos(handler.getBoardPos()); buf.writeByte(hostType); buf.writeByte(guestType); ClientPlayNetworking.send(ChessNetwork.SET_PIECE_TYPES, buf); }
 }

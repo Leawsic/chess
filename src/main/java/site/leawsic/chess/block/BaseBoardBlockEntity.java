@@ -21,7 +21,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private ChessGameConfig config;
     private final ChessGameConfig primaryConfig;
     private final ChessGameConfig altConfig;
-    private int gameMode = 0; // 0=primary, 1=alt
+    private int gameMode; // 0=primary, 1=alt
     private final List<Move> moveHistory = new ArrayList<>();
     private int[][] board;
     private int currentPlayer;
@@ -254,12 +254,10 @@ public class BaseBoardBlockEntity extends BlockEntity {
             this.guestPlayer = null;
             this.isMultiplayer = false;
             this.editMode = false;
-            this.gameOver = false;
         } else if (guestPlayer != null && guestPlayer.equals(playerUuid)) {
             this.guestPlayer = null;
             this.isMultiplayer = false;
             this.editMode = false;
-            this.gameOver = false;
         } else {
             return;
         }
