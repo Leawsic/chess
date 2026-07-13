@@ -25,6 +25,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private static final int MIN_BACKGROUND_WIDTH = 280;
     private static final int MIN_BACKGROUND_HEIGHT = 220;
     private static final int MAX_SCREEN_MARGIN = 16;
+    private static final int SIDE_CONTENT_VERTICAL_OFFSET = 24;
 
     private final ChessGameConfig config;
     private final ChessGameConfig altConfig;
@@ -391,7 +392,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                 ? leftSpace / 2
                 : boardLeft + scaledBoardTextureWidth + rightSpace / 2;
         int centerX = centerScreenX - x;
-        int centerY = backgroundHeight / 2;
+        int centerY = backgroundHeight / 2 - SIDE_CONTENT_VERTICAL_OFFSET;
         context.drawCenteredTextWithShadow(textRenderer, black, centerX, centerY - 7, 0xAAAAAA);
         context.drawCenteredTextWithShadow(textRenderer, white, centerX, centerY + 7, 0xFFFFFF);
     }
@@ -619,7 +620,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         int centerX = leftSpace >= rightSpace ? leftSpace / 2 : boardLeft + scaledBoardTextureWidth + rightSpace / 2;
         int maxWidth = Math.max(80, Math.max(leftSpace, rightSpace) - 16);
         var lines = textRenderer.wrapLines(notice, maxWidth);
-        int top = (height - lines.size() * textRenderer.fontHeight) / 2;
+        int top = (height - lines.size() * textRenderer.fontHeight) / 2 + SIDE_CONTENT_VERTICAL_OFFSET;
         for (int i = 0; i < lines.size(); i++) {
             var line = lines.get(i);
             context.drawTextWithShadow(textRenderer, line, centerX - textRenderer.getWidth(line) / 2,
