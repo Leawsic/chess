@@ -105,7 +105,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             localLeftGame = false;
             sendPacket(ChessNetwork.JOIN_GAME);
         })
-                .dimensions(x + backgroundWidth - 145, buttonY1, 65, 20).build();
+                .dimensions(x + backgroundWidth - 120, buttonY1, 40, 20).build();
         leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), btn -> {
             localLeftGame = true;
             sendPacket(ChessNetwork.LEAVE_GAME);
