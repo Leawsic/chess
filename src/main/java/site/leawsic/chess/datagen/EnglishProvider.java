@@ -20,6 +20,8 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "Chess Game");
         translationBuilder.add("gui.chess.clear", "Clear");
         translationBuilder.add("gui.chess.edit_mode", "Edit Mode");
+        translationBuilder.add("gui.chess.ai", "Vs AI");
+        translationBuilder.add("gui.chess.ai_on", "Vs AI: On");
         translationBuilder.add("gui.chess.game_over", "Game Over");
         translationBuilder.add("block.chess.generic_board","Generic Board");
         translationBuilder.add("gui.chess.mode.gomoku", "Gomoku");

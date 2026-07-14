@@ -17,6 +17,7 @@ public class ChessNetwork {
     public static final Identifier LEAVE_GAME = Chess.id("leave_game");
     public static final Identifier SET_PIECE_TYPES = Chess.id("set_piece_types");
     public static final Identifier SET_GAME_MODE = Chess.id("set_game_mode");
+    public static final Identifier TOGGLE_AI = Chess.id("toggle_ai");
     public static final Identifier XIANGQI_MOVE = Chess.id("xiangqi_move");
     public static final Identifier XIANGQI_RESET = Chess.id("xiangqi_reset");
     public static final Identifier GUI_NOTICE = Chess.id("gui_notice");
@@ -127,6 +128,14 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.setGameMode(mode, player.getUuid());
+                }
+            });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(TOGGLE_AI, (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            server.execute(() -> {
+                if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
+                    boardEntity.toggleAi(player.getUuid());
                 }
             });
         });

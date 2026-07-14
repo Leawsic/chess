@@ -33,6 +33,7 @@ bin/
 run/
 src/main/generated
 libs/
+reference
 
 # java
 

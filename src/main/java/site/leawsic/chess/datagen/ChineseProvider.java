@@ -20,6 +20,8 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add(RegistryKey.of(Registries.ITEM_GROUP.getKey(), Chess.id("chess_group")), "棋类游戏");
         translationBuilder.add("gui.chess.clear", "清空");
         translationBuilder.add("gui.chess.edit_mode", "编辑模式");
+        translationBuilder.add("gui.chess.ai", "人机对战");
+        translationBuilder.add("gui.chess.ai_on", "人机对战：开");
         translationBuilder.add("gui.chess.game_over", "游戏结束");
         translationBuilder.add("block.chess.generic_board", "通用棋盘");
         translationBuilder.add("gui.chess.mode.gomoku", "五子棋");

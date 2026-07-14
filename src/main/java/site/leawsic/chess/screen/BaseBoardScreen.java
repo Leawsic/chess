@@ -32,7 +32,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
     private final BlockPos boardPos;
     private int boardLeft, boardTop, boardWidth, boardHeight, cellSize, scaledBoardTextureWidth, scaledBoardTextureHeight;
     private float boardScale = 1.0f;
-    private ButtonWidget clearButton, editModeButton, passButton, finishGoButton;
+    private ButtonWidget clearButton, editModeButton, aiButton, passButton, finishGoButton;
     private ButtonWidget[] pieceSelectButtons;
     private ButtonWidget joinButton, leaveButton, hostBlackButton, hostWhiteButton;
     private ButtonWidget modeGomokuButton, modeGoButton;
@@ -96,6 +96,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                 .dimensions(x + 10, buttonY1, 60, 20).build();
         editModeButton = ButtonWidget.builder(Text.translatable("gui.chess.edit_mode"), btn -> sendPacket(ChessNetwork.TOGGLE_EDIT_MODE))
                 .dimensions(x + 75, buttonY1, 80, 20).build();
+        aiButton = ButtonWidget.builder(Text.translatable("gui.chess.ai"), btn -> sendPacket(ChessNetwork.TOGGLE_AI))
+                .dimensions(x + 145, buttonY2, 70, 20).build();
         passButton = ButtonWidget.builder(Text.translatable("gui.chess.pass"), btn -> sendPacket(ChessNetwork.PASS_TURN))
                 .dimensions(x + 10, buttonY2, 55, 20).build();
         finishGoButton = ButtonWidget.builder(Text.translatable("gui.chess.go.finish"), btn -> sendPacket(ChessNetwork.FINISH_GO_GAME))
@@ -124,6 +126,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         addDrawableChild(clearButton);
         addDrawableChild(editModeButton);
+        addDrawableChild(aiButton);
         addDrawableChild(passButton);
         addDrawableChild(finishGoButton);
         addDrawableChild(joinButton);
@@ -503,6 +506,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             hostWhiteButton.visible = false;
             modeGomokuButton.visible = false;
             modeGoButton.visible = false;
+            aiButton.visible = false;
             return;
         }
 
@@ -514,6 +518,10 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         editModeButton.visible = !gameOver;
         editModeButton.active = !isMultiplayer && isInGame && !gameOver;
+
+        aiButton.visible = !isMultiplayer && be.getGameMode() == 0;
+        aiButton.active = aiButton.visible && isInGame && !hasPieces && !gameOver;
+        aiButton.setMessage(Text.translatable(be.isAiEnabled() ? "gui.chess.ai_on" : "gui.chess.ai"));
 
         passButton.visible = getActiveConfig().supportsPass() && !gameOver;
         passButton.active = getActiveConfig().supportsPass() && isInGame && !gameOver && !be.isEditMode();

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import site.leawsic.chess.config.ChessGameConfig;
 import site.leawsic.chess.config.Move;
 import site.leawsic.chess.config.GomokuConfig;
+import site.leawsic.chess.config.GomokuAi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private boolean isMultiplayer; // 是否为多人对局模式
     private int hostPieceType; // 房主的棋子类型
     private int guestPieceType; // 客人的棋子类型
+    private boolean aiEnabled;
 
     public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         super(type, pos, state);
@@ -63,6 +65,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         this.isMultiplayer = false;
         this.hostPieceType = 1;
         this.guestPieceType = 2;
+        this.aiEnabled = false;
     }
 
     public int getGameMode() {
@@ -78,6 +81,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         if (mode == gameMode) return false;
         gameMode = mode;
         config = (mode == 0) ? primaryConfig : altConfig;
+        if (mode != 0) aiEnabled = false;
         resetBoard();
         markDirtyAndSync();
         return true;
@@ -165,6 +169,18 @@ public class BaseBoardBlockEntity extends BlockEntity {
     public int getGuestPieceType() {
         return guestPieceType;
     }
+
+    public boolean isAiEnabled() {
+        return aiEnabled;
+    }
+
+    public boolean toggleAi(UUID playerUuid) {
+        if (isMultiplayer || gameMode != 0 || hasAnyPieces() || gameOver || (hostPlayer != null && !isHost(playerUuid))) return false;
+        aiEnabled = !aiEnabled;
+        editMode = false;
+        markDirtyAndSync();
+        return true;
+    }
     
     /**
      * 检查玩家是否是房主
@@ -216,6 +232,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         if (guestPlayer == null) {
             this.guestPlayer = playerUuid;
             this.isMultiplayer = true;
+            this.aiEnabled = false;
             this.editMode = false; // 多人模式下禁止编辑
             resetBoard();
             markDirtyAndSync();
@@ -300,6 +317,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else {
             // 单人模式下，如果不是房主则不允许
             if (hostPlayer != null && !isHost(playerUuid)) return false;
+            // 人机模式中玩家固定执黑，白方由服务器控制。
+            if (aiEnabled && !editMode && currentPlayer != 1) return false;
             // 单人模式下可以编辑或使用当前玩家
             if (!editMode && player != currentPlayer) return false;
         }
@@ -325,8 +344,26 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else if (result.switchPlayer() && !editMode) {
             currentPlayer = nextPlayer(currentPlayer);
         }
+        if (aiEnabled && !editMode && !gameOver && currentPlayer == 2) playAiMove();
         markDirtyAndSync();
         return true;
+    }
+
+    private void playAiMove() {
+        Move move = GomokuAi.chooseMove(board, 2);
+        if (move == null) return;
+        ChessGameConfig.PlaceResult result = config.checkPlacement(this, move);
+        if (!result.success()) return;
+        board[move.y()][move.x()] = move.player();
+        moveHistory.add(move);
+        if (result.gameOver()) {
+            gameOver = true;
+            winner = result.winner();
+            blackScore = result.blackScore();
+            whiteScore = result.whiteScore();
+        } else if (result.switchPlayer()) {
+            currentPlayer = nextPlayer(currentPlayer);
+        }
     }
 
     public boolean passTurn(UUID playerUuid) {
@@ -470,6 +507,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         nbt.putInt("HostPieceType", hostPieceType);
         nbt.putInt("GuestPieceType", guestPieceType);
         nbt.putInt("GameMode", gameMode);
+        nbt.putBoolean("AiEnabled", aiEnabled);
     }
 
     @Override
@@ -505,6 +543,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         isMultiplayer = nbt.getBoolean("IsMultiplayer");
         hostPieceType = nbt.contains("HostPieceType") ? nbt.getInt("HostPieceType") : 1;
         guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : 2;
+        aiEnabled = nbt.getBoolean("AiEnabled");
         if (nbt.contains("GameMode")) {
             int savedMode = nbt.getInt("GameMode");
             if (savedMode == 1) {
