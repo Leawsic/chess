@@ -24,6 +24,7 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.ai_on", "人机对战：开");
         translationBuilder.add("gui.chess.ai_black", "人机：玩家黑方");
         translationBuilder.add("gui.chess.ai_white", "人机：玩家白方");
+        translationBuilder.add("gui.chess.ai_thinking", "电脑正在思考...");
         translationBuilder.add("gui.chess.game_over", "游戏结束");
         translationBuilder.add("block.chess.generic_board", "通用棋盘");
         translationBuilder.add("gui.chess.mode.gomoku", "五子棋");

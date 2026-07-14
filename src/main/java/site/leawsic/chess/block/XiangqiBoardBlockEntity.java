@@ -12,6 +12,8 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import site.leawsic.chess.config.XiangqiConfig;
 import site.leawsic.chess.config.XiangqiAi;
+import site.leawsic.chess.config.AiScheduler;
+import net.minecraft.server.world.ServerWorld;
 
 import java.util.UUID;
 
@@ -28,6 +30,8 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     private boolean aiEnabled;
     private int aiPlayerPieceType = XiangqiConfig.RED;
     private boolean hasMoved;
+    private boolean aiThinking;
+    private int aiGeneration;
 
     public XiangqiBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -46,6 +50,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     public int getGuestPieceType() { return guestPieceType; }
     public boolean isAiEnabled() { return aiEnabled; }
     public int getAiPlayerPieceType() { return aiPlayerPieceType; }
+    public boolean isAiThinking() { return aiThinking; }
     public boolean isHost(UUID playerUuid) { return hostPlayer != null && hostPlayer.equals(playerUuid); }
     public boolean isInGame(UUID playerUuid) { return isHost(playerUuid) || guestPlayer != null && guestPlayer.equals(playerUuid); }
     public int getPlayerPieceType(UUID playerUuid) {
@@ -64,6 +69,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
 
     public boolean toggleAi(UUID playerUuid) {
         if (multiplayer || gameOver || hasMoved || (hostPlayer != null && !isHost(playerUuid))) return false;
+        cancelAiMove();
         if (!aiEnabled) {
             aiEnabled = true;
             aiPlayerPieceType = XiangqiConfig.RED;
@@ -76,7 +82,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         hostPieceType = aiPlayerPieceType;
         guestPieceType = -aiPlayerPieceType;
         resetBoard(XiangqiConfig.RED);
-        if (aiEnabled && currentPlayer != aiPlayerPieceType) playAiMove();
+        if (aiEnabled && currentPlayer != aiPlayerPieceType) scheduleAiMove();
         sync();
         return true;
     }
@@ -107,18 +113,38 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         }
         finishMove(captured);
         hasMoved = true;
-        if (aiEnabled && !gameOver && currentPlayer != aiPlayerPieceType) playAiMove();
+        if (aiEnabled && !gameOver && currentPlayer != aiPlayerPieceType) scheduleAiMove();
         sync();
         return null;
     }
 
-    private void playAiMove() {
-        XiangqiAi.Move move = XiangqiAi.chooseMove(board, currentPlayer);
-        if (move == null) return;
+    private void scheduleAiMove() {
+        if (aiThinking || !aiEnabled || gameOver || currentPlayer == aiPlayerPieceType || !(world instanceof ServerWorld serverWorld)) return;
+        aiThinking = true;
+        int generation = ++aiGeneration;
+        int aiSide = currentPlayer;
+        int[][] snapshot = copyBoard();
+        sync();
+        AiScheduler.think(() -> {
+            XiangqiAi.Move move = XiangqiAi.chooseMove(snapshot, aiSide);
+            serverWorld.getServer().execute(() -> finishAiMove(move, aiSide, generation));
+        });
+    }
+
+    private void finishAiMove(XiangqiAi.Move move, int aiSide, int generation) {
+        if (generation != aiGeneration || !aiEnabled || gameOver || currentPlayer != aiSide) return;
+        aiThinking = false;
+        if (move == null) {
+            gameOver = true;
+            winner = -currentPlayer;
+            sync();
+            return;
+        }
         int captured = board[move.toY()][move.toX()];
         board[move.toY()][move.toX()] = board[move.fromY()][move.fromX()];
         board[move.fromY()][move.fromX()] = 0;
         finishMove(captured);
+        sync();
     }
 
     private void finishMove(int captured) {
@@ -128,7 +154,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
             return;
         }
         currentPlayer = -currentPlayer;
-        if (XiangqiConfig.isInCheck(board, currentPlayer) && !XiangqiConfig.hasLegalResponse(board, currentPlayer)) {
+        if (!XiangqiConfig.hasLegalResponse(board, currentPlayer)) {
             gameOver = true;
             winner = -currentPlayer;
         }
@@ -143,6 +169,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         if (guestPlayer != null) return "gui.chess.xq.game_full";
         guestPlayer = playerUuid;
         multiplayer = true;
+        cancelAiMove();
         aiEnabled = false;
         resetBoard(XiangqiConfig.RED);
         sync();
@@ -186,7 +213,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     public boolean resetBoard(UUID playerUuid) {
         if (hostPlayer == null || !hostPlayer.equals(playerUuid)) return false;
         resetBoard(aiEnabled ? XiangqiConfig.RED : isGameStarted() ? XiangqiConfig.RED : hostPieceType);
-        if (aiEnabled && currentPlayer != aiPlayerPieceType) playAiMove();
+        if (aiEnabled && currentPlayer != aiPlayerPieceType) scheduleAiMove();
         sync();
         return true;
     }
@@ -196,6 +223,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     }
 
     private void resetBoard(int firstPlayer) {
+        cancelAiMove();
         board = XiangqiConfig.createInitialBoard();
         currentPlayer = firstPlayer;
         gameOver = false;
@@ -204,6 +232,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     }
 
     private void clearSession() {
+        cancelAiMove();
         hostPlayer = null;
         guestPlayer = null;
         multiplayer = false;
@@ -212,6 +241,14 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         guestPieceType = XiangqiConfig.BLACK;
         aiPlayerPieceType = XiangqiConfig.RED;
     }
+
+    private int[][] copyBoard() {
+        int[][] copy = new int[board.length][];
+        for (int i = 0; i < board.length; i++) copy[i] = board[i].clone();
+        return copy;
+    }
+
+    private void cancelAiMove() { aiGeneration++; aiThinking = false; }
 
 
     private void sync() { markDirty(); if (world != null) world.updateListeners(pos, getCachedState(), getCachedState(), 3); }

@@ -14,6 +14,8 @@ import site.leawsic.chess.config.ChessGameConfig;
 import site.leawsic.chess.config.Move;
 import site.leawsic.chess.config.GomokuConfig;
 import site.leawsic.chess.config.GomokuAi;
+import site.leawsic.chess.config.AiScheduler;
+import net.minecraft.server.world.ServerWorld;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private int guestPieceType; // 客人的棋子类型
     private boolean aiEnabled;
     private int aiPlayerPieceType;
+    private boolean aiThinking;
+    private int aiGeneration;
 
     public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         super(type, pos, state);
@@ -180,15 +184,28 @@ public class BaseBoardBlockEntity extends BlockEntity {
         return aiPlayerPieceType;
     }
 
+    public boolean isAiThinking() { return aiThinking; }
+
     public boolean toggleAi(UUID playerUuid) {
-        if (isMultiplayer || gameMode != 0 || hasAnyPieces() || gameOver || (hostPlayer != null && !isHost(playerUuid))) return false;
+        if (isMultiplayer || gameMode != 0 || (hostPlayer != null && !isHost(playerUuid))) return false;
+        // A running AI game can always be exited. Color selection stays locked
+        // once the board has moves, so a click cannot rewrite an active game.
+        if (aiEnabled && (hasAnyPieces() || gameOver)) {
+            aiEnabled = false;
+            aiPlayerPieceType = 1;
+            cancelAiMove();
+            markDirtyAndSync();
+            return true;
+        }
+        if (hasAnyPieces() || gameOver) return false;
+        cancelAiMove();
         if (!aiEnabled) {
             aiEnabled = true;
             aiPlayerPieceType = 1;
         } else if (aiPlayerPieceType == 1) {
             aiPlayerPieceType = 2;
             resetBoard();
-            playAiMove();
+            scheduleAiMove();
         } else {
             aiEnabled = false;
             aiPlayerPieceType = 1;
@@ -360,17 +377,30 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else if (result.switchPlayer() && !editMode) {
             currentPlayer = nextPlayer(currentPlayer);
         }
-        if (aiEnabled && !editMode && !gameOver && currentPlayer != aiPlayerPieceType) playAiMove();
+        if (aiEnabled && !editMode && !gameOver && currentPlayer != aiPlayerPieceType) scheduleAiMove();
         markDirtyAndSync();
         return true;
     }
 
-    private void playAiMove() {
-        int aiPieceType = aiPlayerPieceType == 1 ? 2 : 1;
-        Move move = GomokuAi.chooseMove(board, aiPieceType);
-        if (move == null) return;
+    private void scheduleAiMove() {
+        if (aiThinking || !aiEnabled || gameOver || currentPlayer == aiPlayerPieceType || !(world instanceof ServerWorld serverWorld)) return;
+        aiThinking = true;
+        int generation = ++aiGeneration;
+        int aiPieceType = currentPlayer;
+        int[][] snapshot = copyBoard();
+        markDirtyAndSync();
+        AiScheduler.think(() -> {
+            Move move = GomokuAi.chooseMove(snapshot, aiPieceType);
+            serverWorld.getServer().execute(() -> finishAiMove(move, aiPieceType, generation));
+        });
+    }
+
+    private void finishAiMove(Move move, int aiPieceType, int generation) {
+        if (generation != aiGeneration || !aiEnabled || gameOver || currentPlayer != aiPieceType) return;
+        aiThinking = false;
+        if (move == null || board[move.y()][move.x()] != config.getEmptyValue()) { markDirtyAndSync(); return; }
         ChessGameConfig.PlaceResult result = config.checkPlacement(this, move);
-        if (!result.success()) return;
+        if (!result.success()) { markDirtyAndSync(); return; }
         board[move.y()][move.x()] = move.player();
         moveHistory.add(move);
         if (result.gameOver()) {
@@ -381,7 +411,16 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else if (result.switchPlayer()) {
             currentPlayer = nextPlayer(currentPlayer);
         }
+        markDirtyAndSync();
     }
+
+    private int[][] copyBoard() {
+        int[][] copy = new int[board.length][];
+        for (int i = 0; i < board.length; i++) copy[i] = board[i].clone();
+        return copy;
+    }
+
+    private void cancelAiMove() { aiGeneration++; aiThinking = false; }
 
     public boolean passTurn(UUID playerUuid) {
         if (!config.supportsPass() || gameOver || editMode || !hasAnyPieces()) return false;
@@ -440,7 +479,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
     public boolean clearBoard(UUID playerUuid) {
         if (!canClearBoard(playerUuid)) return false;
         resetBoard();
-        if (aiEnabled && aiPlayerPieceType == 2) playAiMove();
+        cancelAiMove();
+        if (aiEnabled && aiPlayerPieceType == 2) scheduleAiMove();
         markDirtyAndSync();
         return true;
     }
@@ -459,6 +499,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     }
 
     private void resetBoard() {
+        cancelAiMove();
         board = new int[config.getRows()][config.getCols()];
         moveHistory.clear();
         gameOver = false;

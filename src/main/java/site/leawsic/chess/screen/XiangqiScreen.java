@@ -151,17 +151,9 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
     }
 
     private void drawGameOverScreen(DrawContext context, XiangqiBoardBlockEntity board) {
-        context.fill(0, 0, backgroundWidth, backgroundHeight, 0xD2000000);
         String winner = Text.translatable(board.getWinner() == XiangqiConfig.RED
                 ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString();
-        int centerX = backgroundWidth / 2;
-        int centerY = backgroundHeight / 2 - 20;
-        int titleWidth = textRenderer.getWidth(winner) + 40;
-        context.fill(centerX - titleWidth / 2, centerY - 15, centerX + titleWidth / 2, centerY + 35, 0xE0000000);
-        context.drawBorder(centerX - titleWidth / 2, centerY - 15, titleWidth, 50, 0xFFFFD54F);
-        context.drawCenteredTextWithShadow(textRenderer, winner, centerX, centerY, 0xFFD54F);
-        context.drawCenteredTextWithShadow(textRenderer, Text.translatable("gui.chess.game_over"), centerX, centerY + 25, 0xFFFFFF);
-        context.drawCenteredTextWithShadow(textRenderer, Text.translatable("gui.chess.clear_hint"), centerX, backgroundHeight - 60, 0xDDDDDD);
+        ChessScreenUi.drawGameOver(context, textRenderer, backgroundWidth, backgroundHeight, winner);
     }
 
     private String getStatus(XiangqiBoardBlockEntity board) {
@@ -171,6 +163,7 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
                     ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString();
         }
         if (board.isAiEnabled()) {
+            if (board.isAiThinking()) return Text.translatable("gui.chess.xq.ai_turn").getString();
             return Text.translatable(board.getCurrentPlayer() == board.getAiPlayerPieceType()
                     ? "gui.chess.xq.player_turn" : "gui.chess.xq.ai_turn").getString();
         }

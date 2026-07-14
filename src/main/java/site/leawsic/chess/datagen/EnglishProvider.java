@@ -24,6 +24,7 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.ai_on", "Vs AI: On");
         translationBuilder.add("gui.chess.ai_black", "AI: You Black");
         translationBuilder.add("gui.chess.ai_white", "AI: You White");
+        translationBuilder.add("gui.chess.ai_thinking", "AI is thinking...");
         translationBuilder.add("gui.chess.game_over", "Game Over");
         translationBuilder.add("block.chess.generic_board","Generic Board");
         translationBuilder.add("gui.chess.mode.gomoku", "Gomoku");

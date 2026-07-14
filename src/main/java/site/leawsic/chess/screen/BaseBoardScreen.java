@@ -371,6 +371,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                                 hostName, guestName,
                                 Text.translatable("gui.chess.turn").getString(), turnPlayer);
                     }
+                } else if (be.isAiThinking()) {
+                    status = Text.translatable("gui.chess.ai_thinking").getString();
                 } else if (be.isEditMode()) {
                     status = Text.translatable("gui.chess.edit_mode").getString();
                 } else {
@@ -404,17 +406,12 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
      * 绘制游戏结束胜利反馈
      */
     private void drawGameOverScreen(DrawContext context, BaseBoardBlockEntity be) {
-        // 半透明背景遮罩
-        int overlayAlpha = 210;
-        context.fill(0, 0, backgroundWidth, backgroundHeight, (overlayAlpha << 24));
-
         // 获取获胜者
         int winner;
         winner = be.getWinner();
 
         // 中央显示获胜信息
         String winnerText;
-        int winnerColor;
 
         if (be.isMultiplayer()) {
             // 多人模式：显示玩家名称
@@ -438,7 +435,6 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             winnerText = winner > 0
                     ? winnerName + Text.translatable("gui.chess.winner_suffix").getString()
                     : Text.translatable("gui.chess.draw").getString();
-            winnerColor = 0xFFD54F;
         } else {
             // 单人模式：从配置中获取获胜棋子名称
             if (winner > 0 && winner <= config.getPlayerCount()) {
@@ -448,33 +444,13 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             } else {
                 winnerText = Text.translatable("gui.chess.draw").getString();
             }
-            winnerColor = 0xFFD54F;
         }
 
         if (be.getBlackScore() > 0 || be.getWhiteScore() > 0) {
             winnerText += String.format(" (B %.1f / W %.1f)", be.getBlackScore(), be.getWhiteScore());
         }
 
-        // 绘制标题
-        int centerX = backgroundWidth / 2;
-        int centerY = backgroundHeight / 2 - 20;
-
-        // 标题背景
-        int titleWidth = textRenderer.getWidth(winnerText) + 40;
-        int titleHeight = 50;
-        context.fill(centerX - titleWidth / 2, centerY - 15, centerX + titleWidth / 2, centerY + titleHeight - 15, 0xE0000000);
-        context.drawBorder(centerX - titleWidth / 2, centerY - 15, titleWidth, titleHeight, 0xFFFFD54F);
-
-        // 标题文字
-        context.drawCenteredTextWithShadow(textRenderer, winnerText, centerX, centerY, winnerColor);
-
-        // 副标题
-        String subtitle = Text.translatable("gui.chess.game_over").getString();
-        context.drawCenteredTextWithShadow(textRenderer, subtitle, centerX, centerY + 25, 0xFFFFFF);
-
-        // 底部提示
-        String hint = Text.translatable("gui.chess.clear_hint").getString();
-        context.drawCenteredTextWithShadow(textRenderer, hint, centerX, backgroundHeight - 60, 0xDDDDDD);
+        ChessScreenUi.drawGameOver(context, textRenderer, backgroundWidth, backgroundHeight, winnerText);
     }
 
     private void updateMultiplayerButtons(BaseBoardBlockEntity be) {
@@ -520,7 +496,9 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         editModeButton.active = !isMultiplayer && isInGame && !gameOver;
 
         aiButton.visible = !isMultiplayer && be.getGameMode() == 0;
-        aiButton.active = aiButton.visible && isInGame && !hasPieces && !gameOver;
+        // An enabled AI game can be cancelled at any time; choosing a side is
+        // only available before the first move.
+        aiButton.active = aiButton.visible && isInGame && (be.isAiEnabled() || !hasPieces && !gameOver);
         aiButton.setMessage(Text.translatable(!be.isAiEnabled() ? "gui.chess.ai"
                 : be.getAiPlayerPieceType() == 1 ? "gui.chess.ai_black" : "gui.chess.ai_white"));
 
@@ -551,12 +529,6 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
             }
         }
         return false;
-    }
-
-    private boolean isLocalPlayerInMultiplayerGame() {
-        if (client == null || client.player == null) return false;
-        BaseBoardBlockEntity be = getBlockEntity();
-        return be != null && be.isMultiplayer() && be.isInGame(client.player.getUuid());
     }
 
     private boolean isLocalPlayerInGame(BaseBoardBlockEntity be) {
