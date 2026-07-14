@@ -11,6 +11,7 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import site.leawsic.chess.config.XiangqiConfig;
+import site.leawsic.chess.config.XiangqiAi;
 
 import java.util.UUID;
 
@@ -24,6 +25,9 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     private boolean multiplayer;
     private int hostPieceType = XiangqiConfig.RED;
     private int guestPieceType = XiangqiConfig.BLACK;
+    private boolean aiEnabled;
+    private int aiPlayerPieceType = XiangqiConfig.RED;
+    private boolean hasMoved;
 
     public XiangqiBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -40,6 +44,8 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     public boolean isGameStarted() { return guestPlayer != null; }
     public int getHostPieceType() { return hostPieceType; }
     public int getGuestPieceType() { return guestPieceType; }
+    public boolean isAiEnabled() { return aiEnabled; }
+    public int getAiPlayerPieceType() { return aiPlayerPieceType; }
     public boolean isHost(UUID playerUuid) { return hostPlayer != null && hostPlayer.equals(playerUuid); }
     public boolean isInGame(UUID playerUuid) { return isHost(playerUuid) || guestPlayer != null && guestPlayer.equals(playerUuid); }
     public int getPlayerPieceType(UUID playerUuid) {
@@ -56,6 +62,25 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         }
     }
 
+    public boolean toggleAi(UUID playerUuid) {
+        if (multiplayer || gameOver || hasMoved || (hostPlayer != null && !isHost(playerUuid))) return false;
+        if (!aiEnabled) {
+            aiEnabled = true;
+            aiPlayerPieceType = XiangqiConfig.RED;
+        } else if (aiPlayerPieceType == XiangqiConfig.RED) {
+            aiPlayerPieceType = XiangqiConfig.BLACK;
+        } else {
+            aiEnabled = false;
+            aiPlayerPieceType = XiangqiConfig.RED;
+        }
+        hostPieceType = aiPlayerPieceType;
+        guestPieceType = -aiPlayerPieceType;
+        resetBoard(XiangqiConfig.RED);
+        if (aiEnabled && currentPlayer != aiPlayerPieceType) playAiMove();
+        sync();
+        return true;
+    }
+
     public String tryMove(int fromX, int fromY, int toX, int toY, UUID playerUuid) {
         if (gameOver) return "gui.chess.xq.game_over";
         if (multiplayer) {
@@ -64,6 +89,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         } else if (hostPlayer == null || !hostPlayer.equals(playerUuid)) {
             return "gui.chess.xq.not_host";
         }
+        if (aiEnabled && currentPlayer != aiPlayerPieceType) return "gui.chess.xq.not_your_turn";
         if (!XiangqiConfig.inBounds(fromX, fromY) || !XiangqiConfig.inBounds(toX, toY)) return "gui.chess.xq.invalid_position";
         int piece = board[fromY][fromX];
         if (piece == 0) return "gui.chess.xq.empty_position";
@@ -79,18 +105,33 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
             board[toY][toX] = captured;
             return "gui.chess.xq.self_check";
         }
+        finishMove(captured);
+        hasMoved = true;
+        if (aiEnabled && !gameOver && currentPlayer != aiPlayerPieceType) playAiMove();
+        sync();
+        return null;
+    }
+
+    private void playAiMove() {
+        XiangqiAi.Move move = XiangqiAi.chooseMove(board, currentPlayer);
+        if (move == null) return;
+        int captured = board[move.toY()][move.toX()];
+        board[move.toY()][move.toX()] = board[move.fromY()][move.fromX()];
+        board[move.fromY()][move.fromX()] = 0;
+        finishMove(captured);
+    }
+
+    private void finishMove(int captured) {
         if (Math.abs(captured) == XiangqiConfig.GENERAL) {
             gameOver = true;
             winner = currentPlayer;
-        } else {
-            currentPlayer = -currentPlayer;
-            if (XiangqiConfig.isInCheck(board, currentPlayer) && !XiangqiConfig.hasLegalResponse(board, currentPlayer)) {
-                gameOver = true;
-                winner = -currentPlayer;
-            }
+            return;
         }
-        sync();
-        return null;
+        currentPlayer = -currentPlayer;
+        if (XiangqiConfig.isInCheck(board, currentPlayer) && !XiangqiConfig.hasLegalResponse(board, currentPlayer)) {
+            gameOver = true;
+            winner = -currentPlayer;
+        }
     }
 
     public String joinGame(UUID playerUuid) {
@@ -102,6 +143,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         if (guestPlayer != null) return "gui.chess.xq.game_full";
         guestPlayer = playerUuid;
         multiplayer = true;
+        aiEnabled = false;
         resetBoard(XiangqiConfig.RED);
         sync();
         return null;
@@ -143,7 +185,8 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
 
     public boolean resetBoard(UUID playerUuid) {
         if (hostPlayer == null || !hostPlayer.equals(playerUuid)) return false;
-        resetBoard();
+        resetBoard(aiEnabled ? XiangqiConfig.RED : isGameStarted() ? XiangqiConfig.RED : hostPieceType);
+        if (aiEnabled && currentPlayer != aiPlayerPieceType) playAiMove();
         sync();
         return true;
     }
@@ -157,14 +200,17 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         currentPlayer = firstPlayer;
         gameOver = false;
         winner = 0;
+        hasMoved = false;
     }
 
     private void clearSession() {
         hostPlayer = null;
         guestPlayer = null;
         multiplayer = false;
+        aiEnabled = false;
         hostPieceType = XiangqiConfig.RED;
         guestPieceType = XiangqiConfig.BLACK;
+        aiPlayerPieceType = XiangqiConfig.RED;
     }
 
 
@@ -183,6 +229,9 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         nbt.putBoolean("Multiplayer", multiplayer);
         nbt.putInt("HostPieceType", hostPieceType);
         nbt.putInt("GuestPieceType", guestPieceType);
+        nbt.putBoolean("AiEnabled", aiEnabled);
+        nbt.putInt("AiPlayerPieceType", aiPlayerPieceType);
+        nbt.putBoolean("HasMoved", hasMoved);
     }
 
     @Override public void readNbt(NbtCompound nbt) {
@@ -200,6 +249,9 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         multiplayer = nbt.getBoolean("Multiplayer");
         hostPieceType = nbt.contains("HostPieceType") ? nbt.getInt("HostPieceType") : XiangqiConfig.RED;
         guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : XiangqiConfig.BLACK;
+        aiEnabled = nbt.getBoolean("AiEnabled");
+        aiPlayerPieceType = nbt.contains("AiPlayerPieceType") ? nbt.getInt("AiPlayerPieceType") : XiangqiConfig.RED;
+        hasMoved = nbt.getBoolean("HasMoved");
     }
 
     @Nullable @Override public Packet<ClientPlayPacketListener> toUpdatePacket() { return BlockEntityUpdateS2CPacket.create(this); }

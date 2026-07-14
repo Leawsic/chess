@@ -43,6 +43,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private int hostPieceType; // 房主的棋子类型
     private int guestPieceType; // 客人的棋子类型
     private boolean aiEnabled;
+    private int aiPlayerPieceType;
 
     public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         super(type, pos, state);
@@ -66,6 +67,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         this.hostPieceType = 1;
         this.guestPieceType = 2;
         this.aiEnabled = false;
+        this.aiPlayerPieceType = 1;
     }
 
     public int getGameMode() {
@@ -174,9 +176,23 @@ public class BaseBoardBlockEntity extends BlockEntity {
         return aiEnabled;
     }
 
+    public int getAiPlayerPieceType() {
+        return aiPlayerPieceType;
+    }
+
     public boolean toggleAi(UUID playerUuid) {
         if (isMultiplayer || gameMode != 0 || hasAnyPieces() || gameOver || (hostPlayer != null && !isHost(playerUuid))) return false;
-        aiEnabled = !aiEnabled;
+        if (!aiEnabled) {
+            aiEnabled = true;
+            aiPlayerPieceType = 1;
+        } else if (aiPlayerPieceType == 1) {
+            aiPlayerPieceType = 2;
+            resetBoard();
+            playAiMove();
+        } else {
+            aiEnabled = false;
+            aiPlayerPieceType = 1;
+        }
         editMode = false;
         markDirtyAndSync();
         return true;
@@ -317,8 +333,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else {
             // 单人模式下，如果不是房主则不允许
             if (hostPlayer != null && !isHost(playerUuid)) return false;
-            // 人机模式中玩家固定执黑，白方由服务器控制。
-            if (aiEnabled && !editMode && currentPlayer != 1) return false;
+            // 人机模式中仅允许玩家执色在其回合落子。
+            if (aiEnabled && !editMode && currentPlayer != aiPlayerPieceType) return false;
             // 单人模式下可以编辑或使用当前玩家
             if (!editMode && player != currentPlayer) return false;
         }
@@ -344,13 +360,14 @@ public class BaseBoardBlockEntity extends BlockEntity {
         } else if (result.switchPlayer() && !editMode) {
             currentPlayer = nextPlayer(currentPlayer);
         }
-        if (aiEnabled && !editMode && !gameOver && currentPlayer == 2) playAiMove();
+        if (aiEnabled && !editMode && !gameOver && currentPlayer != aiPlayerPieceType) playAiMove();
         markDirtyAndSync();
         return true;
     }
 
     private void playAiMove() {
-        Move move = GomokuAi.chooseMove(board, 2);
+        int aiPieceType = aiPlayerPieceType == 1 ? 2 : 1;
+        Move move = GomokuAi.chooseMove(board, aiPieceType);
         if (move == null) return;
         ChessGameConfig.PlaceResult result = config.checkPlacement(this, move);
         if (!result.success()) return;
@@ -423,6 +440,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
     public boolean clearBoard(UUID playerUuid) {
         if (!canClearBoard(playerUuid)) return false;
         resetBoard();
+        if (aiEnabled && aiPlayerPieceType == 2) playAiMove();
         markDirtyAndSync();
         return true;
     }
@@ -508,6 +526,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         nbt.putInt("GuestPieceType", guestPieceType);
         nbt.putInt("GameMode", gameMode);
         nbt.putBoolean("AiEnabled", aiEnabled);
+        nbt.putInt("AiPlayerPieceType", aiPlayerPieceType);
     }
 
     @Override
@@ -544,6 +563,7 @@ public class BaseBoardBlockEntity extends BlockEntity {
         hostPieceType = nbt.contains("HostPieceType") ? nbt.getInt("HostPieceType") : 1;
         guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : 2;
         aiEnabled = nbt.getBoolean("AiEnabled");
+        aiPlayerPieceType = nbt.contains("AiPlayerPieceType") ? nbt.getInt("AiPlayerPieceType") : 1;
         if (nbt.contains("GameMode")) {
             int savedMode = nbt.getInt("GameMode");
             if (savedMode == 1) {

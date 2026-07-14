@@ -22,6 +22,8 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.edit_mode", "编辑模式");
         translationBuilder.add("gui.chess.ai", "人机对战");
         translationBuilder.add("gui.chess.ai_on", "人机对战：开");
+        translationBuilder.add("gui.chess.ai_black", "人机：玩家黑方");
+        translationBuilder.add("gui.chess.ai_white", "人机：玩家白方");
         translationBuilder.add("gui.chess.game_over", "游戏结束");
         translationBuilder.add("block.chess.generic_board", "通用棋盘");
         translationBuilder.add("gui.chess.mode.gomoku", "五子棋");
@@ -60,6 +62,11 @@ public class ChineseProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.xq.multiplayer_turn", "%s（%s） 对 %s（%s） | 轮到：%s");
         translationBuilder.add("gui.chess.xq.host_red", "房主红方");
         translationBuilder.add("gui.chess.xq.host_black", "房主黑方");
+        translationBuilder.add("gui.chess.xq.ai", "人机对战");
+        translationBuilder.add("gui.chess.xq.ai_red", "人机：玩家红方");
+        translationBuilder.add("gui.chess.xq.ai_black", "人机：玩家黑方");
+        translationBuilder.add("gui.chess.xq.player_turn", "轮到你走棋");
+        translationBuilder.add("gui.chess.xq.ai_turn", "电脑思考中");
         translationBuilder.add("gui.chess.xq.not_player", "你不是本局玩家");
         translationBuilder.add("gui.chess.xq.game_full", "对局已有两名玩家");
         translationBuilder.add("gui.chess.xq.host_only", "只有房主可以设置棋色");

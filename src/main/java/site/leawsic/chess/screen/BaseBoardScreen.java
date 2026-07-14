@@ -521,7 +521,8 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
 
         aiButton.visible = !isMultiplayer && be.getGameMode() == 0;
         aiButton.active = aiButton.visible && isInGame && !hasPieces && !gameOver;
-        aiButton.setMessage(Text.translatable(be.isAiEnabled() ? "gui.chess.ai_on" : "gui.chess.ai"));
+        aiButton.setMessage(Text.translatable(!be.isAiEnabled() ? "gui.chess.ai"
+                : be.getAiPlayerPieceType() == 1 ? "gui.chess.ai_black" : "gui.chess.ai_white"));
 
         passButton.visible = getActiveConfig().supportsPass() && !gameOver;
         passButton.active = getActiveConfig().supportsPass() && isInGame && !gameOver && !be.isEditMode();

@@ -22,7 +22,7 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
     private float scale;
     private int selectedX = -1, selectedY = -1;
     private ButtonWidget resetButton;
-    private ButtonWidget joinButton, leaveButton, hostRedButton, hostBlackButton;
+    private ButtonWidget joinButton, leaveButton, hostRedButton, hostBlackButton, aiButton;
     private boolean leaveSent;
     private long lastEscapePress;
     private Text notice;
@@ -41,7 +41,7 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         backgroundHeight = Math.min(height - 32, 580);
         x = (width - backgroundWidth) / 2;
         y = (height - backgroundHeight) / 2;
-        scale = Math.min((backgroundWidth - 16) / (float) XiangqiConfig.BOARD_TEXTURE_SIZE, (backgroundHeight - 48) / (float) XiangqiConfig.BOARD_TEXTURE_SIZE);
+        scale = Math.min((backgroundWidth - 16) / (float) XiangqiConfig.BOARD_TEXTURE_SIZE, (backgroundHeight - 72) / (float) XiangqiConfig.BOARD_TEXTURE_SIZE);
         boardLeft = x + (backgroundWidth - Math.round(XiangqiConfig.BOARD_TEXTURE_SIZE * scale)) / 2;
         boardTop = y + 24;
         resetButton = ButtonWidget.builder(Text.translatable("gui.chess.clear"), button -> sendReset()).dimensions(x + 10, y + backgroundHeight - 24, 60, 20).build();
@@ -49,11 +49,13 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         leaveButton = ButtonWidget.builder(Text.translatable("gui.chess.leave"), button -> leaveGame()).dimensions(x + 135, y + backgroundHeight - 24, 55, 20).build();
         hostRedButton = ButtonWidget.builder(Text.translatable("gui.chess.xq.host_red"), button -> sendPieceTypes(1, 2)).dimensions(x + backgroundWidth - 190, y + backgroundHeight - 24, 85, 20).build();
         hostBlackButton = ButtonWidget.builder(Text.translatable("gui.chess.xq.host_black"), button -> sendPieceTypes(2, 1)).dimensions(x + backgroundWidth - 100, y + backgroundHeight - 24, 85, 20).build();
+        aiButton = ButtonWidget.builder(Text.translatable("gui.chess.xq.ai"), button -> sendSimple(ChessNetwork.TOGGLE_AI)).dimensions(x + 10, y + backgroundHeight - 48, 80, 20).build();
         addDrawableChild(resetButton);
         addDrawableChild(joinButton);
         addDrawableChild(leaveButton);
         addDrawableChild(hostRedButton);
         addDrawableChild(hostBlackButton);
+        addDrawableChild(aiButton);
     }
 
     @Override protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
@@ -95,7 +97,9 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
             if (selectedX < 0) {
                 if (piece != 0 && XiangqiConfig.color(piece) == board.getCurrentPlayer()
                         && client.player != null
-                        && (!board.isGameStarted() || board.getPlayerPieceType(client.player.getUuid()) == XiangqiConfig.color(piece))) {
+                        && (board.isAiEnabled()
+                        ? board.getAiPlayerPieceType() == XiangqiConfig.color(piece)
+                        : !board.isGameStarted() || board.getPlayerPieceType(client.player.getUuid()) == XiangqiConfig.color(piece))) {
                     selectedX = col; selectedY = row;
                 }
             } else {
@@ -109,8 +113,11 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
 
     @Override protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         XiangqiBoardBlockEntity board = getBoard();
-        String status = getStatus(board);
-        context.drawText(textRenderer, status, 10, 10, 0xFFFFFF, false);
+        if (board != null && board.isGameOver()) {
+            drawGameOverScreen(context, board);
+        } else {
+            context.drawText(textRenderer, getStatus(board), 10, 10, 0xFFFFFF, false);
+        }
         if (board != null && !board.isGameOver() && XiangqiConfig.isInCheck(board.getBoard(), board.getCurrentPlayer())) {
             drawCheckWarning(context, board.getCurrentPlayer());
         }
@@ -121,9 +128,13 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         joinButton.visible = joinButton.active = board != null && board.getHostPlayer() != null
                 && !inGame && board.getGuestPlayer() == null;
         leaveButton.visible = leaveButton.active = inGame && gameStarted;
-        hostRedButton.visible = hostBlackButton.visible = board != null;
-        hostRedButton.active = host;
-        hostBlackButton.active = host;
+        hostRedButton.visible = hostBlackButton.visible = board != null && !board.isAiEnabled();
+        hostRedButton.active = host && !board.isAiEnabled();
+        hostBlackButton.active = host && !board.isAiEnabled();
+        aiButton.visible = board != null && !gameStarted;
+        aiButton.active = aiButton.visible && host && !board.isGameOver();
+        aiButton.setMessage(Text.translatable(!board.isAiEnabled() ? "gui.chess.xq.ai"
+                : board.getAiPlayerPieceType() == XiangqiConfig.RED ? "gui.chess.xq.ai_red" : "gui.chess.xq.ai_black"));
     }
 
     private void drawCheckWarning(DrawContext context, int side) {
@@ -139,11 +150,29 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
         context.drawTextWithShadow(textRenderer, warning, centerX - textWidth / 2, top + 4, 0xFFFFFFFF);
     }
 
+    private void drawGameOverScreen(DrawContext context, XiangqiBoardBlockEntity board) {
+        context.fill(0, 0, backgroundWidth, backgroundHeight, 0xD2000000);
+        String winner = Text.translatable(board.getWinner() == XiangqiConfig.RED
+                ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString();
+        int centerX = backgroundWidth / 2;
+        int centerY = backgroundHeight / 2 - 20;
+        int titleWidth = textRenderer.getWidth(winner) + 40;
+        context.fill(centerX - titleWidth / 2, centerY - 15, centerX + titleWidth / 2, centerY + 35, 0xE0000000);
+        context.drawBorder(centerX - titleWidth / 2, centerY - 15, titleWidth, 50, 0xFFFFD54F);
+        context.drawCenteredTextWithShadow(textRenderer, winner, centerX, centerY, 0xFFD54F);
+        context.drawCenteredTextWithShadow(textRenderer, Text.translatable("gui.chess.game_over"), centerX, centerY + 25, 0xFFFFFF);
+        context.drawCenteredTextWithShadow(textRenderer, Text.translatable("gui.chess.clear_hint"), centerX, backgroundHeight - 60, 0xDDDDDD);
+    }
+
     private String getStatus(XiangqiBoardBlockEntity board) {
         if (board == null) return "";
         if (board.isGameOver()) {
             return Text.translatable(board.getWinner() == XiangqiConfig.RED
                     ? "gui.chess.xq.red_wins" : "gui.chess.xq.black_wins").getString();
+        }
+        if (board.isAiEnabled()) {
+            return Text.translatable(board.getCurrentPlayer() == board.getAiPlayerPieceType()
+                    ? "gui.chess.xq.player_turn" : "gui.chess.xq.ai_turn").getString();
         }
         if (!board.isGameStarted() || client == null || client.world == null) {
             return Text.translatable(board.getCurrentPlayer() == XiangqiConfig.RED

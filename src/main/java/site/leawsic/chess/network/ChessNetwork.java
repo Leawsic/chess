@@ -136,6 +136,8 @@ public class ChessNetwork {
             server.execute(() -> {
                 if (player.getWorld().getBlockEntity(pos) instanceof BaseBoardBlockEntity boardEntity) {
                     boardEntity.toggleAi(player.getUuid());
+                } else if (player.getWorld().getBlockEntity(pos) instanceof site.leawsic.chess.block.XiangqiBoardBlockEntity board) {
+                    board.toggleAi(player.getUuid());
                 }
             });
         });

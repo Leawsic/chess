@@ -22,6 +22,8 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.edit_mode", "Edit Mode");
         translationBuilder.add("gui.chess.ai", "Vs AI");
         translationBuilder.add("gui.chess.ai_on", "Vs AI: On");
+        translationBuilder.add("gui.chess.ai_black", "AI: You Black");
+        translationBuilder.add("gui.chess.ai_white", "AI: You White");
         translationBuilder.add("gui.chess.game_over", "Game Over");
         translationBuilder.add("block.chess.generic_board","Generic Board");
         translationBuilder.add("gui.chess.mode.gomoku", "Gomoku");
@@ -60,6 +62,11 @@ public class EnglishProvider extends FabricLanguageProvider {
         translationBuilder.add("gui.chess.xq.multiplayer_turn", "%s (%s) vs %s (%s) | Turn: %s");
         translationBuilder.add("gui.chess.xq.host_red", "Host Red");
         translationBuilder.add("gui.chess.xq.host_black", "Host Black");
+        translationBuilder.add("gui.chess.xq.ai", "Vs AI");
+        translationBuilder.add("gui.chess.xq.ai_red", "AI: You Red");
+        translationBuilder.add("gui.chess.xq.ai_black", "AI: You Black");
+        translationBuilder.add("gui.chess.xq.player_turn", "Your Turn");
+        translationBuilder.add("gui.chess.xq.ai_turn", "AI Thinking");
         translationBuilder.add("gui.chess.xq.not_player", "You are not a player in this game");
         translationBuilder.add("gui.chess.xq.game_full", "This game already has two players");
         translationBuilder.add("gui.chess.xq.host_only", "Only the host can set the piece colors");
