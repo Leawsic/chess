@@ -16,7 +16,7 @@ public final class GoAi {
         int bestScore = Integer.MIN_VALUE;
         Move best = null;
         for (int y = 0; y < board.length; y++) for (int x = 0; x < board[0].length; x++) {
-            if (board[y][x] != 0 || x == koX && y == koY) continue;
+            if (board[y][x] != 0 || (x == koX && y == koY)) continue;
             Position position = play(board, x, y, player);
             if (position == null) continue;
 
