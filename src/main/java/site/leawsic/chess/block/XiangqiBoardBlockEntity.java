@@ -32,6 +32,10 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     private boolean hasMoved;
     private boolean aiThinking;
     private int aiGeneration;
+    private int lastFromX = -1;
+    private int lastFromY = -1;
+    private int lastToX = -1;
+    private int lastToY = -1;
 
     public XiangqiBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -51,6 +55,10 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
     public boolean isAiEnabled() { return aiEnabled; }
     public int getAiPlayerPieceType() { return aiPlayerPieceType; }
     public boolean isAiThinking() { return aiThinking; }
+    public int getLastFromX() { return lastFromX; }
+    public int getLastFromY() { return lastFromY; }
+    public int getLastToX() { return lastToX; }
+    public int getLastToY() { return lastToY; }
     public boolean isHost(UUID playerUuid) { return hostPlayer != null && hostPlayer.equals(playerUuid); }
     public boolean isInGame(UUID playerUuid) { return isHost(playerUuid) || guestPlayer != null && guestPlayer.equals(playerUuid); }
     public int getPlayerPieceType(UUID playerUuid) {
@@ -111,6 +119,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
             board[toY][toX] = captured;
             return "gui.chess.xq.self_check";
         }
+        recordLastMove(fromX, fromY, toX, toY);
         finishMove(captured);
         hasMoved = true;
         if (aiEnabled && !gameOver && currentPlayer != aiPlayerPieceType) scheduleAiMove();
@@ -143,6 +152,7 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         int captured = board[move.toY()][move.toX()];
         board[move.toY()][move.toX()] = board[move.fromY()][move.fromX()];
         board[move.fromY()][move.fromX()] = 0;
+        recordLastMove(move.fromX(), move.fromY(), move.toX(), move.toY());
         finishMove(captured);
         sync();
     }
@@ -229,6 +239,14 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         gameOver = false;
         winner = 0;
         hasMoved = false;
+        lastFromX = lastFromY = lastToX = lastToY = -1;
+    }
+
+    private void recordLastMove(int fromX, int fromY, int toX, int toY) {
+        lastFromX = fromX;
+        lastFromY = fromY;
+        lastToX = toX;
+        lastToY = toY;
     }
 
     private void clearSession() {
@@ -269,6 +287,10 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         nbt.putBoolean("AiEnabled", aiEnabled);
         nbt.putInt("AiPlayerPieceType", aiPlayerPieceType);
         nbt.putBoolean("HasMoved", hasMoved);
+        nbt.putInt("LastFromX", lastFromX);
+        nbt.putInt("LastFromY", lastFromY);
+        nbt.putInt("LastToX", lastToX);
+        nbt.putInt("LastToY", lastToY);
     }
 
     @Override public void readNbt(NbtCompound nbt) {
@@ -289,6 +311,10 @@ public class XiangqiBoardBlockEntity extends BlockEntity {
         aiEnabled = nbt.getBoolean("AiEnabled");
         aiPlayerPieceType = nbt.contains("AiPlayerPieceType") ? nbt.getInt("AiPlayerPieceType") : XiangqiConfig.RED;
         hasMoved = nbt.getBoolean("HasMoved");
+        lastFromX = nbt.contains("LastFromX") ? nbt.getInt("LastFromX") : -1;
+        lastFromY = nbt.contains("LastFromY") ? nbt.getInt("LastFromY") : -1;
+        lastToX = nbt.contains("LastToX") ? nbt.getInt("LastToX") : -1;
+        lastToY = nbt.contains("LastToY") ? nbt.getInt("LastToY") : -1;
     }
 
     @Nullable @Override public Packet<ClientPlayPacketListener> toUpdatePacket() { return BlockEntityUpdateS2CPacket.create(this); }

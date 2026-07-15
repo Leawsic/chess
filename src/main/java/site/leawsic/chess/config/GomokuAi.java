@@ -6,7 +6,7 @@ import java.util.List;
 
 public final class GomokuAi {
     private static final int[][] DIRECTIONS = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-    private static final int CANDIDATE_LIMIT = 14;
+    private static final int CANDIDATE_LIMIT = 20;
 
     private GomokuAi() {
     }
@@ -26,14 +26,15 @@ public final class GomokuAi {
                 score = 10_000_000;
             } else {
                 int worstReply = 0;
-                for (ScoredMove reply : candidates(board, opponent, 10)) {
+                for (ScoredMove reply : candidates(board, opponent, 14)) {
                     board[reply.move.y()][reply.move.x()] = opponent;
                     int replyScore = isWin(board, reply.move.x(), reply.move.y(), opponent)
-                            ? 9_000_000 : reply.score + bestFollowUp(board, aiPlayer);
+                            ? 9_000_000 : reply.score * 2 + bestFollowUp(board, aiPlayer);
                     board[reply.move.y()][reply.move.x()] = 0;
                     worstReply = Math.max(worstReply, replyScore);
                 }
-                score = candidate.score * 3 - worstReply;
+                // Give forcing attacks priority over merely matching the opponent's shape.
+                score = scorePoint(board, x, y, aiPlayer) * 5 + threatBonus(board, x, y, aiPlayer) - worstReply;
             }
             board[y][x] = 0;
             if (score > bestScore) {
@@ -45,7 +46,7 @@ public final class GomokuAi {
     }
 
     private static int bestFollowUp(int[][] board, int player) {
-        List<ScoredMove> moves = candidates(board, player, 4);
+        List<ScoredMove> moves = candidates(board, player, 6);
         return moves.isEmpty() ? 0 : moves.get(0).score / 2;
     }
 
@@ -59,7 +60,7 @@ public final class GomokuAi {
             if (!hasNeighbor(board, x, y) && !(x == centerX && y == centerY)) continue;
             int attack = scorePoint(board, x, y, player);
             int defense = scorePoint(board, x, y, opponent);
-            int score = attack * 2 + defense * 3 / 2 - Math.abs(x - centerX) - Math.abs(y - centerY);
+            int score = attack * 4 + defense * 2 - Math.abs(x - centerX) - Math.abs(y - centerY);
             moves.add(new ScoredMove(new Move(x, y, player), score));
         }
         if (empty) return List.of(new ScoredMove(new Move(centerX, centerY, player), 1));
@@ -86,6 +87,24 @@ public final class GomokuAi {
             score += lineScore(stones, open);
         }
         return score;
+    }
+
+    private static int threatBonus(int[][] board, int x, int y, int player) {
+        int openFours = 0;
+        int openThrees = 0;
+        for (int[] direction : DIRECTIONS) {
+            int forward = count(board, x, y, direction[0], direction[1], player);
+            int backward = count(board, x, y, -direction[0], -direction[1], player);
+            int stones = forward + backward + 1;
+            int open = isOpen(board, x + (forward + 1) * direction[0], y + (forward + 1) * direction[1]) ? 1 : 0;
+            open += isOpen(board, x - (backward + 1) * direction[0], y - (backward + 1) * direction[1]) ? 1 : 0;
+            if (stones == 4 && open > 0) openFours++;
+            if (stones == 3 && open == 2) openThrees++;
+        }
+        if (openFours >= 2) return 2_500_000;
+        if (openFours == 1) return 450_000;
+        if (openThrees >= 2) return 180_000;
+        return openThrees == 1 ? 12_000 : 0;
     }
 
     private static boolean isWin(int[][] board, int x, int y, int player) {

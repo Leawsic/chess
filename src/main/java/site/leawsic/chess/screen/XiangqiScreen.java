@@ -83,6 +83,19 @@ public class XiangqiScreen extends HandledScreen<XiangqiScreenHandler> {
             context.drawTexture(texture, centerX - XiangqiConfig.PIECE_PIXELS / 2, centerY - XiangqiConfig.PIECE_PIXELS / 2, 0, 0, XiangqiConfig.PIECE_PIXELS, XiangqiConfig.PIECE_PIXELS, XiangqiConfig.PIECE_PIXELS, XiangqiConfig.PIECE_PIXELS);
             if (col == selectedX && row == selectedY) context.drawBorder(centerX - XiangqiConfig.PIECE_PIXELS / 2 - 1, centerY - XiangqiConfig.PIECE_PIXELS / 2 - 1, XiangqiConfig.PIECE_PIXELS + 2, XiangqiConfig.PIECE_PIXELS + 2, 0xFFFFFF00);
         }
+        drawLastMoveMarker(context, board.getLastFromX(), board.getLastFromY());
+        drawLastMoveMarker(context, board.getLastToX(), board.getLastToY());
+    }
+
+    private void drawLastMoveMarker(DrawContext context, int col, int row) {
+        if (!XiangqiConfig.inBounds(col, row)) return;
+        int centerX = XiangqiConfig.textureX(col);
+        int centerY = XiangqiConfig.textureY(row);
+        int size = XiangqiConfig.PIECE_PIXELS + 6;
+        int left = centerX - size / 2;
+        int top = centerY - size / 2;
+        context.drawBorder(left - 1, top - 1, size + 2, size + 2, 0xFF251A08);
+        context.drawBorder(left, top, size, size, 0xFFFFD54F);
     }
 
     @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {

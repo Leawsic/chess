@@ -315,6 +315,20 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
                     context.getMatrices().pop();
                 }
             }
+
+            int lastMoveX = be.getLastMoveX();
+            int lastMoveY = be.getLastMoveY();
+            if (lastMoveX >= 0 && lastMoveX < config.getCols() && lastMoveY >= 0 && lastMoveY < config.getRows()) {
+                float centerX = config.getPieceCenterU(lastMoveX);
+                float centerY = config.getPieceCenterV(lastMoveY);
+                int markerSize = 4;
+                context.getMatrices().push();
+                context.getMatrices().translate(boardLeft, boardTop, 0);
+                context.getMatrices().scale(boardScale, boardScale, 1.0f);
+                context.fill(Math.round(centerX) - markerSize / 2, Math.round(centerY) - markerSize / 2,
+                        Math.round(centerX) + markerSize / 2, Math.round(centerY) + markerSize / 2, 0xFFE53935);
+                context.getMatrices().pop();
+            }
         }
     }
 

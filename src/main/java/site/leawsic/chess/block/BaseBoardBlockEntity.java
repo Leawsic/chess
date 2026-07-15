@@ -48,6 +48,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
     private int aiPlayerPieceType;
     private boolean aiThinking;
     private int aiGeneration;
+    private int lastMoveX = -1;
+    private int lastMoveY = -1;
 
     public BaseBoardBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, ChessGameConfig primaryConfig, ChessGameConfig altConfig) {
         super(type, pos, state);
@@ -185,6 +187,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
     }
 
     public boolean isAiThinking() { return aiThinking; }
+    public int getLastMoveX() { return lastMoveX; }
+    public int getLastMoveY() { return lastMoveY; }
 
     public boolean toggleAi(UUID playerUuid) {
         if (isMultiplayer || gameMode != 0 || (hostPlayer != null && !isHost(playerUuid))) return false;
@@ -364,6 +368,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
             board[captured.y()][captured.x()] = config.getEmptyValue();
         }
         moveHistory.add(new Move(x, y, player));
+        lastMoveX = x;
+        lastMoveY = y;
         consecutivePasses = 0;
         koX = result.koX();
         koY = result.koY();
@@ -403,6 +409,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         if (!result.success()) { markDirtyAndSync(); return; }
         board[move.y()][move.x()] = move.player();
         moveHistory.add(move);
+        lastMoveX = move.x();
+        lastMoveY = move.y();
         if (result.gameOver()) {
             gameOver = true;
             winner = result.winner();
@@ -511,6 +519,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         koX = -1;
         koY = -1;
         currentPlayer = config.getInitialPlayer();
+        lastMoveX = -1;
+        lastMoveY = -1;
     }
 
     private boolean canClearBoard(UUID playerUuid) {
@@ -568,6 +578,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         nbt.putInt("GameMode", gameMode);
         nbt.putBoolean("AiEnabled", aiEnabled);
         nbt.putInt("AiPlayerPieceType", aiPlayerPieceType);
+        nbt.putInt("LastMoveX", lastMoveX);
+        nbt.putInt("LastMoveY", lastMoveY);
     }
 
     @Override
@@ -605,6 +617,8 @@ public class BaseBoardBlockEntity extends BlockEntity {
         guestPieceType = nbt.contains("GuestPieceType") ? nbt.getInt("GuestPieceType") : 2;
         aiEnabled = nbt.getBoolean("AiEnabled");
         aiPlayerPieceType = nbt.contains("AiPlayerPieceType") ? nbt.getInt("AiPlayerPieceType") : 1;
+        lastMoveX = nbt.contains("LastMoveX") ? nbt.getInt("LastMoveX") : -1;
+        lastMoveY = nbt.contains("LastMoveY") ? nbt.getInt("LastMoveY") : -1;
         if (nbt.contains("GameMode")) {
             int savedMode = nbt.getInt("GameMode");
             if (savedMode == 1) {
