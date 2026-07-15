@@ -5,13 +5,15 @@ import java.util.Comparator;
 import java.util.List;
 
 public final class XiangqiAi {
-    private static final int SEARCH_WIDTH = 18;
+    private static final int ROOT_WIDTH = 24;
+    private static final int REPLY_WIDTH = 16;
+    private static final int FOLLOW_UP_WIDTH = 8;
 
     private XiangqiAi() {
     }
 
     public static Move chooseMove(int[][] board, int side) {
-        List<ScoredMove> moves = legalMoves(board, side, SEARCH_WIDTH);
+        List<ScoredMove> moves = legalMoves(board, side, ROOT_WIDTH);
         Move best = null;
         int bestScore = Integer.MIN_VALUE;
         for (ScoredMove candidate : moves) {
@@ -20,19 +22,19 @@ public final class XiangqiAi {
             if (Math.abs(captured) == XiangqiConfig.GENERAL) {
                 score = 10_000_000;
             } else {
-                List<ScoredMove> replies = legalMoves(board, -side, SEARCH_WIDTH);
+                List<ScoredMove> replies = legalMoves(board, -side, REPLY_WIDTH);
                 if (replies.isEmpty()) {
                     score = 9_000_000;
                 } else {
-                    int worstReply = Integer.MIN_VALUE;
+                    int worstReply = Integer.MAX_VALUE;
                     for (ScoredMove reply : replies) {
                         int replyCaptured = makeMove(board, reply.move);
                         int replyScore = Math.abs(replyCaptured) == XiangqiConfig.GENERAL
-                                ? 10_000_000 : evaluate(board, -side) + reply.orderScore;
+                                ? -10_000_000 : bestFollowUp(board, side);
                         undoMove(board, reply.move, replyCaptured);
-                        worstReply = Math.max(worstReply, replyScore);
+                        worstReply = Math.min(worstReply, replyScore);
                     }
-                    score = candidate.orderScore + evaluate(board, side) - worstReply;
+                    score = worstReply + candidate.orderScore / 4;
                 }
             }
             undoMove(board, candidate.move, captured);
@@ -40,6 +42,20 @@ public final class XiangqiAi {
                 bestScore = score;
                 best = candidate.move;
             }
+        }
+        return best;
+    }
+
+    private static int bestFollowUp(int[][] board, int side) {
+        List<ScoredMove> moves = legalMoves(board, side, FOLLOW_UP_WIDTH);
+        if (moves.isEmpty()) return -9_000_000;
+        int best = Integer.MIN_VALUE;
+        for (ScoredMove move : moves) {
+            int captured = makeMove(board, move.move);
+            int score = Math.abs(captured) == XiangqiConfig.GENERAL
+                    ? 10_000_000 : evaluate(board, side) + move.orderScore / 3;
+            undoMove(board, move.move, captured);
+            best = Math.max(best, score);
         }
         return best;
     }
@@ -77,8 +93,8 @@ public final class XiangqiAi {
         for (int[] row : board) for (int piece : row) {
             if (piece != 0) score += XiangqiConfig.color(piece) == side ? value(Math.abs(piece)) : -value(Math.abs(piece));
         }
-        if (XiangqiConfig.isInCheck(board, -side)) score += 500;
-        if (XiangqiConfig.isInCheck(board, side)) score -= 700;
+        if (XiangqiConfig.isInCheck(board, -side)) score += 1_200;
+        if (XiangqiConfig.isInCheck(board, side)) score -= 1_500;
         return score;
     }
 

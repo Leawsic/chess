@@ -6,13 +6,21 @@ import java.util.List;
 
 public final class GomokuAi {
     private static final int[][] DIRECTIONS = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-    private static final int CANDIDATE_LIMIT = 20;
+    private static final int CANDIDATE_LIMIT = 24;
 
     private GomokuAi() {
     }
 
     public static Move chooseMove(int[][] board, int aiPlayer) {
         int opponent = other(aiPlayer);
+        List<Move> winningMoves = winningMoves(board, aiPlayer);
+        if (!winningMoves.isEmpty()) return winningMoves.get(0);
+
+        List<Move> opponentWins = winningMoves(board, opponent);
+        // Only an immediate win is a forced block. Treating every promising
+        // enemy line as urgent was making the AI abandon its own attack.
+        if (opponentWins.size() == 1) return opponentWins.get(0);
+
         List<ScoredMove> candidates = candidates(board, aiPlayer, CANDIDATE_LIMIT);
         if (candidates.isEmpty()) return null;
 
@@ -22,19 +30,23 @@ public final class GomokuAi {
             int x = candidate.move.x(), y = candidate.move.y();
             board[y][x] = aiPlayer;
             int score;
-            if (isWin(board, x, y, aiPlayer)) {
-                score = 10_000_000;
+            List<Move> replyWins = winningMoves(board, opponent);
+            if (!replyWins.isEmpty()) {
+                // A double threat cannot be fully blocked in one move; prefer
+                // the move that gives the strongest counter-threat.
+                score = -8_000_000 - replyWins.size() * 100_000 + attackValue(board, x, y, aiPlayer);
             } else {
                 int worstReply = 0;
                 for (ScoredMove reply : candidates(board, opponent, 14)) {
                     board[reply.move.y()][reply.move.x()] = opponent;
-                    int replyScore = isWin(board, reply.move.x(), reply.move.y(), opponent)
-                            ? 9_000_000 : reply.score * 2 + bestFollowUp(board, aiPlayer);
+                    int replyScore = attackValue(board, reply.move.x(), reply.move.y(), opponent)
+                            - bestFollowUp(board, aiPlayer);
                     board[reply.move.y()][reply.move.x()] = 0;
                     worstReply = Math.max(worstReply, replyScore);
                 }
-                // Give forcing attacks priority over merely matching the opponent's shape.
-                score = scorePoint(board, x, y, aiPlayer) * 5 + threatBonus(board, x, y, aiPlayer) - worstReply;
+                int forcingMoves = winningMoves(board, aiPlayer).size();
+                int forcingBonus = forcingMoves >= 2 ? 4_000_000 : forcingMoves == 1 ? 250_000 : 0;
+                score = attackValue(board, x, y, aiPlayer) * 4 + forcingBonus - worstReply;
             }
             board[y][x] = 0;
             if (score > bestScore) {
@@ -47,7 +59,12 @@ public final class GomokuAi {
 
     private static int bestFollowUp(int[][] board, int player) {
         List<ScoredMove> moves = candidates(board, player, 6);
-        return moves.isEmpty() ? 0 : moves.get(0).score / 2;
+        if (moves.isEmpty()) return 0;
+        ScoredMove best = moves.get(0);
+        board[best.move.y()][best.move.x()] = player;
+        int score = attackValue(board, best.move.x(), best.move.y(), player);
+        board[best.move.y()][best.move.x()] = 0;
+        return score;
     }
 
     private static List<ScoredMove> candidates(int[][] board, int player, int limit) {
@@ -60,7 +77,9 @@ public final class GomokuAi {
             if (!hasNeighbor(board, x, y) && !(x == centerX && y == centerY)) continue;
             int attack = scorePoint(board, x, y, player);
             int defense = scorePoint(board, x, y, opponent);
-            int score = attack * 4 + defense * 2 - Math.abs(x - centerX) - Math.abs(y - centerY);
+            // Strong enemy shapes must remain in the search frontier. The root
+            // search decides whether their pressure merits an actual block.
+            int score = attack * 6 + defense * 4 - Math.abs(x - centerX) - Math.abs(y - centerY);
             moves.add(new ScoredMove(new Move(x, y, player), score));
         }
         if (empty) return List.of(new ScoredMove(new Move(centerX, centerY, player), 1));
@@ -105,6 +124,21 @@ public final class GomokuAi {
         if (openFours == 1) return 450_000;
         if (openThrees >= 2) return 180_000;
         return openThrees == 1 ? 12_000 : 0;
+    }
+
+    private static int attackValue(int[][] board, int x, int y, int player) {
+        return scorePoint(board, x, y, player) + threatBonus(board, x, y, player);
+    }
+
+    private static List<Move> winningMoves(int[][] board, int player) {
+        List<Move> moves = new ArrayList<>();
+        for (int y = 0; y < board.length; y++) for (int x = 0; x < board[0].length; x++) {
+            if (board[y][x] != 0) continue;
+            board[y][x] = player;
+            if (isWin(board, x, y, player)) moves.add(new Move(x, y, player));
+            board[y][x] = 0;
+        }
+        return moves;
     }
 
     private static boolean isWin(int[][] board, int x, int y, int player) {
