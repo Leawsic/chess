@@ -509,7 +509,7 @@ public class BaseBoardScreen extends HandledScreen<BaseBoardScreenHandler> {
         editModeButton.visible = !gameOver;
         editModeButton.active = !isMultiplayer && isInGame && !gameOver;
 
-        aiButton.visible = !isMultiplayer && be.getGameMode() == 0;
+        aiButton.visible = !isMultiplayer;
         // An enabled AI game can be cancelled at any time; choosing a side is
         // only available before the first move.
         aiButton.active = aiButton.visible && isInGame && (be.isAiEnabled() || !hasPieces && !gameOver);
