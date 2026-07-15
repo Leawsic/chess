@@ -5,9 +5,9 @@ import java.util.Comparator;
 import java.util.List;
 
 public final class XiangqiAi {
-    private static final int ROOT_WIDTH = 24;
-    private static final int REPLY_WIDTH = 16;
-    private static final int FOLLOW_UP_WIDTH = 8;
+    private static final int ROOT_WIDTH = 30;
+    private static final int REPLY_WIDTH = 20;
+    private static final int FOLLOW_UP_WIDTH = 10;
 
     private XiangqiAi() {
     }
@@ -80,22 +80,45 @@ public final class XiangqiAi {
     }
 
     private static int orderScore(int[][] board, int piece, int captured, int toX, int toY, int side) {
-        int score = value(Math.abs(captured)) * 12 - value(Math.abs(piece));
+        // Captures are valuable but should not crowd out developing attacks.
+        int score = value(Math.abs(captured)) * 6 - value(Math.abs(piece)) / 3;
         if (Math.abs(captured) == XiangqiConfig.GENERAL) return 10_000_000;
-        if (XiangqiConfig.isInCheck(board, -side)) score += 8_000;
-        score += 20 - Math.abs(toX - 4) * 3;
-        score += side == XiangqiConfig.RED ? 9 - toY : toY;
+        if (XiangqiConfig.isInCheck(board, -side)) score += 15_000;
+        score += positionalValue(piece, toX, toY, side) * 4;
+        if (inEnemyPalace(toX, toY, side)) score += 180;
         return score;
     }
 
     private static int evaluate(int[][] board, int side) {
         int score = 0;
-        for (int[] row : board) for (int piece : row) {
-            if (piece != 0) score += XiangqiConfig.color(piece) == side ? value(Math.abs(piece)) : -value(Math.abs(piece));
+        for (int y = 0; y < XiangqiConfig.ROWS; y++) for (int x = 0; x < XiangqiConfig.COLS; x++) {
+            int piece = board[y][x];
+            if (piece == 0) continue;
+            int pieceSide = XiangqiConfig.color(piece);
+            int pieceScore = value(Math.abs(piece)) + positionalValue(piece, x, y, pieceSide);
+            score += pieceSide == side ? pieceScore : -pieceScore;
         }
         if (XiangqiConfig.isInCheck(board, -side)) score += 1_200;
         if (XiangqiConfig.isInCheck(board, side)) score -= 1_500;
         return score;
+    }
+
+    private static int positionalValue(int piece, int x, int y, int side) {
+        int type = Math.abs(piece);
+        int advance = side == XiangqiConfig.RED ? 9 - y : y;
+        int center = 4 - Math.abs(x - 4);
+        return switch (type) {
+            case XiangqiConfig.ROOK -> advance * 8 + center * 5;
+            case XiangqiConfig.CANNON -> advance * 10 + center * 7;
+            case XiangqiConfig.HORSE -> center * 18 + advance * 5;
+            case XiangqiConfig.SOLDIER -> advance < 5 ? advance * 12 : 90 + advance * 22 + center * 10;
+            case XiangqiConfig.ADVISOR, XiangqiConfig.ELEPHANT -> center * 3;
+            default -> 0;
+        };
+    }
+
+    private static boolean inEnemyPalace(int x, int y, int side) {
+        return x >= 3 && x <= 5 && (side == XiangqiConfig.RED ? y <= 2 : y >= 7);
     }
 
     private static int makeMove(int[][] board, Move move) {

@@ -405,12 +405,13 @@ public class BaseBoardBlockEntity extends BlockEntity {
         if (generation != aiGeneration || !aiEnabled || gameOver || currentPlayer != aiPieceType) return;
         aiThinking = false;
         if (move == null || board[move.y()][move.x()] != config.getEmptyValue()) { markDirtyAndSync(); return; }
-        ChessGameConfig.PlaceResult result = config.checkPlacement(this, move);
+        Move aiMove = new Move(move.x(), move.y(), aiPieceType);
+        ChessGameConfig.PlaceResult result = config.checkPlacement(this, aiMove);
         if (!result.success()) { markDirtyAndSync(); return; }
-        board[move.y()][move.x()] = move.player();
-        moveHistory.add(move);
-        lastMoveX = move.x();
-        lastMoveY = move.y();
+        board[aiMove.y()][aiMove.x()] = aiPieceType;
+        moveHistory.add(aiMove);
+        lastMoveX = aiMove.x();
+        lastMoveY = aiMove.y();
         if (result.gameOver()) {
             gameOver = true;
             winner = result.winner();

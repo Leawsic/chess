@@ -19,7 +19,10 @@ public final class GomokuAi {
         List<Move> opponentWins = winningMoves(board, opponent);
         // Only an immediate win is a forced block. Treating every promising
         // enemy line as urgent was making the AI abandon its own attack.
-        if (opponentWins.size() == 1) return opponentWins.get(0);
+        if (opponentWins.size() == 1) {
+            Move block = opponentWins.get(0);
+            return new Move(block.x(), block.y(), aiPlayer);
+        }
 
         List<ScoredMove> candidates = candidates(board, aiPlayer, CANDIDATE_LIMIT);
         if (candidates.isEmpty()) return null;
